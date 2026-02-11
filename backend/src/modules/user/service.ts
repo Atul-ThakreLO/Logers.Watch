@@ -1,6 +1,9 @@
-import { prisma } from "../../utils/db";
+import { prisma, cache, CacheKeys } from "../../utils/db";
 import type { CreateUserDTO, UserResponse } from "./model";
 import type { User } from "../../generated/prisma/client";
+
+// Cache TTL in seconds (5 minutes)
+const USER_CACHE_TTL = 300;
 
 // Helper to strip password from user object
 function toUserResponse(user: User): UserResponse {
@@ -19,12 +22,6 @@ export class UserService {
       throw new Error("User with this email already exists");
     }
 
-    // Check if username already exists
-    const existingUsername = await this.findByUsername(data.username);
-    if (existingUsername) {
-      throw new Error("Username is already taken");
-    }
-
     // Hash password using Bun's built-in password hashing
     const hashedPassword = await Bun.password.hash(data.password, {
       algorithm: "bcrypt",
@@ -33,11 +30,15 @@ export class UserService {
 
     const user = await prisma.user.create({
       data: {
+        name: data.name,
         email: data.email.toLowerCase(),
-        username: data.username,
         password: hashedPassword,
       },
     });
+
+    // Cache the new user
+    await cache.set(CacheKeys.user(user.id), user, USER_CACHE_TTL);
+    await cache.set(CacheKeys.userByEmail(user.email), user, USER_CACHE_TTL);
 
     return toUserResponse(user);
   }
@@ -46,27 +47,46 @@ export class UserService {
    * Find user by ID
    */
   async findById(id: string): Promise<User | null> {
-    return prisma.user.findUnique({
+    // Try cache first
+    const cached = await cache.get<User>(CacheKeys.user(id));
+    if (cached) return cached;
+
+    const user = await prisma.user.findUnique({
       where: { id },
     });
+
+    if (user) {
+      await cache.set(CacheKeys.user(id), user, USER_CACHE_TTL);
+    }
+
+    return user;
   }
 
   /**
    * Find user by email
    */
   async findByEmail(email: string): Promise<User | null> {
-    return prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
-  }
+    const normalizedEmail = email.toLowerCase();
 
-  /**
-   * Find user by username
-   */
-  async findByUsername(username: string): Promise<User | null> {
-    return prisma.user.findUnique({
-      where: { username },
+    // Try cache first
+    const cached = await cache.get<User>(
+      CacheKeys.userByEmail(normalizedEmail),
+    );
+    if (cached) return cached;
+
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
     });
+
+    if (user) {
+      await cache.set(
+        CacheKeys.userByEmail(normalizedEmail),
+        user,
+        USER_CACHE_TTL,
+      );
+    }
+
+    return user;
   }
 
   /**
@@ -82,13 +102,55 @@ export class UserService {
    */
   async update(
     id: string,
-    data: Partial<Pick<User, "username" | "email">>,
+    data: Partial<Pick<User, "name" | "email">>,
   ): Promise<UserResponse | null> {
     try {
       const user = await prisma.user.update({
         where: { id },
         data,
       });
+
+      // Invalidate and update cache
+      await cache.del(CacheKeys.user(id));
+      await cache.del(CacheKeys.userByEmail(user.email));
+      await cache.set(CacheKeys.user(id), user, USER_CACHE_TTL);
+      await cache.set(CacheKeys.userByEmail(user.email), user, USER_CACHE_TTL);
+
+      return toUserResponse(user);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Update user balance
+   */
+  async updateBalance(
+    id: string,
+    amount: number,
+    isRecharge: boolean = false,
+  ): Promise<UserResponse | null> {
+    try {
+      const updateData: { balance: number; lastRechargeAmount?: number } = {
+        balance: amount,
+      };
+
+      if (isRecharge) {
+        updateData.lastRechargeAmount = amount;
+      }
+
+      const user = await prisma.user.update({
+        where: { id },
+        data: {
+          balance: { increment: amount },
+          ...(isRecharge ? { lastRechargeAmount: amount } : {}),
+        },
+      });
+
+      // Invalidate cache
+      await cache.del(CacheKeys.user(id));
+      await cache.del(CacheKeys.userByEmail(user.email));
+
       return toUserResponse(user);
     } catch {
       return null;
@@ -100,9 +162,14 @@ export class UserService {
    */
   async delete(id: string): Promise<boolean> {
     try {
-      await prisma.user.delete({
+      const user = await prisma.user.delete({
         where: { id },
       });
+
+      // Invalidate cache
+      await cache.del(CacheKeys.user(id));
+      await cache.del(CacheKeys.userByEmail(user.email));
+
       return true;
     } catch {
       return false;

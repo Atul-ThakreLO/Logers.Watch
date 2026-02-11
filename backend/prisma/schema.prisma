@@ -13,17 +13,51 @@ datasource db {
   provider = "postgresql"
 }
 
+// Regular User (viewer) model
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  username      String         @unique
-  password      String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  refreshTokens RefreshToken[]
+  id                 String         @id @default(uuid())
+  name               String
+  email              String         @unique
+  password           String
+  balance            Float          @default(0) // credits balance
+  lastRechargeAmount Float          @default(0)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  refreshTokens      RefreshToken[]
 
   @@index([email])
-  @@index([username])
+}
+
+// Creator model
+model Creator {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  company      String?
+  password     String
+  watchTime    Float    @default(0) // total watch time in seconds
+  amountEarned Float    @default(0)
+  eoaAddress   String?  // Externally Owned Account or Smart Account address
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  videos       Video[]
+
+  @@index([email])
+  @@index([eoaAddress])
+}
+
+// Video model
+model Video {
+  id         String   @id @default(uuid())
+  videoId    String   @unique // external video identifier
+  mpdFileUrl String   // DASH manifest URL
+  creatorId  String
+  creator    Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([videoId])
+  @@index([creatorId])
 }
 
 model RefreshToken {
