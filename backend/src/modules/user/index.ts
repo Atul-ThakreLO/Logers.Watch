@@ -6,7 +6,7 @@ import { authMiddleware } from "../auth/service";
 type AuthContext = {
   userId: string | null;
   userEmail: string | null;
-  username: string | null;
+  userName: string | null;
 };
 
 export const userController = new Elysia({ prefix: "/users" })
@@ -85,7 +85,7 @@ export const userController = new Elysia({ prefix: "/users" })
     },
     {
       body: t.Object({
-        username: t.Optional(t.String({ minLength: 3, maxLength: 50 })),
+        name: t.Optional(t.String({ minLength: 2, maxLength: 100 })),
       }),
       detail: {
         summary: "Update current user profile",

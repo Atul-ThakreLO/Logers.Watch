@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@elysiajs/cookie": "^0.8.0",
+    "@elysiajs/cors": "^1.4.1",
     "@elysiajs/jwt": "^1.4.0",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "elysia": "latest",
+    "ioredis": "^5.9.2",
     "pg": "^8.18.0",
     "prisma": "^7.3.0"
   },

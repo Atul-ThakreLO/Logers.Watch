@@ -8,8 +8,8 @@ export const LoginSchema = t.Object({
 
 // Register schema
 export const RegisterSchema = t.Object({
+  name: t.String({ minLength: 2, maxLength: 100 }),
   email: t.String({ format: "email" }),
-  username: t.String({ minLength: 3, maxLength: 50 }),
   password: t.String({ minLength: 6 }),
 });
 
@@ -24,7 +24,7 @@ export const TokenResponseSchema = t.Object({
 export interface JWTPayload {
   sub: string; // user id
   email: string;
-  username: string;
+  name: string;
   type: "access" | "refresh" | "stream"; // token type
   iat?: number;
   exp?: number;
@@ -46,8 +46,8 @@ export interface LoginDTO {
 
 // Register DTO
 export interface RegisterDTO {
+  name: string;
   email: string;
-  username: string;
   password: string;
 }
 

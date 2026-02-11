@@ -41,7 +41,7 @@ export class AuthService {
       throw new Error("Invalid email or password");
     }
 
-    return this.generateTokens(user.id, user.email, user.username, jwtSign);
+    return this.generateTokens(user.id, user.email, user.name, jwtSign);
   }
 
   /**
@@ -50,7 +50,7 @@ export class AuthService {
   async generateTokens(
     userId: string,
     email: string,
-    username: string,
+    name: string,
     jwtSign: (payload: any) => Promise<string>,
   ): Promise<TokenResponse> {
     const now = Math.floor(Date.now() / 1000);
@@ -59,7 +59,7 @@ export class AuthService {
     const accessPayload: JWTPayload = {
       sub: userId,
       email,
-      username,
+      name,
       type: "access",
       iat: now,
       exp: now + JWT_CONFIG.accessTokenExpiry,
@@ -69,7 +69,7 @@ export class AuthService {
     const refreshPayload: JWTPayload = {
       sub: userId,
       email,
-      username,
+      name,
       type: "refresh",
       iat: now,
       exp: now + JWT_CONFIG.refreshTokenExpiry,
@@ -132,7 +132,7 @@ export class AuthService {
     await prisma.refreshToken.delete({ where: { token: refreshToken } });
 
     // Generate new tokens
-    return this.generateTokens(user.id, user.email, user.username, jwtSign);
+    return this.generateTokens(user.id, user.email, user.name, jwtSign);
   }
 
   /**
@@ -224,7 +224,7 @@ export const authMiddleware = new Elysia({ name: "auth-middleware" })
     }): Promise<{
       userId: string | null;
       userEmail: string | null;
-      username: string | null;
+      userName: string | null;
     }> => {
       // Try to get token from Authorization header first
       const authHeader = request.headers.get("authorization");
@@ -243,22 +243,22 @@ export const authMiddleware = new Elysia({ name: "auth-middleware" })
       }
 
       if (!token) {
-        return { userId: null, userEmail: null, username: null };
+        return { userId: null, userEmail: null, userName: null };
       }
 
       try {
         const payload = (await jwt.verify(token)) as JWTPayload | false;
         if (!payload || payload.type !== "access") {
-          return { userId: null, userEmail: null, username: null };
+          return { userId: null, userEmail: null, userName: null };
         }
 
         return {
           userId: payload.sub,
           userEmail: payload.email,
-          username: payload.username,
+          userName: payload.name,
         };
       } catch {
-        return { userId: null, userEmail: null, username: null };
+        return { userId: null, userEmail: null, userName: null };
       }
     },
   );
