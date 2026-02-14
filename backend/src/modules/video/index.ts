@@ -6,11 +6,10 @@ import { JWT_CONFIG } from "../../utils/jwt";
 import { CreateVideoSchema, UpdateVideoSchema } from "./model";
 import { resolve, join } from "path";
 import { readFile, stat } from "fs/promises";
+import { billingService } from "../billing/service";
 
 // Public folder path for video files
 const PUBLIC_FOLDER = resolve(process.cwd(), "public");
-
-let count = 0;
 
 // JWT Payload for creator
 interface CreatorJWTPayload {
@@ -234,23 +233,30 @@ export const videoController = new Elysia({ prefix: "/videos" })
     },
   )
   // Protected streaming routes (verified users only)
-  // .use(userAuthMiddleware)
+  .use(userAuthMiddleware)
   .get(
     "/stream/:videoId/manifest.mpd",
     async (ctx) => {
       const { params, userId, set } = ctx as typeof ctx & UserAuthContext;
 
-      // if (!userId) {
-      //   set.status = 401;
-      //   return { error: "Unauthorized - Please login to access video content" };
-      // }
+      if (!userId) {
+        set.status = 401;
+        set.headers["Access-Control-Allow-Origin"] = "http://localhost:3001";
+        set.headers["Access-Control-Allow-Credentials"] = "true";
+        return { error: "Unauthorized - Please login to access video content" };
+      }
 
-      // Verify video exists
-      // const video = await videoService.findByVideoId(params.videoId);
-      // if (!video) {
-      //   set.status = 404;
-      //   return { error: "Video not found" };
-      // }
+      // Verify video exists and get creator info
+      const video = await videoService.findByVideoId(params.videoId);
+      if (!video) {
+        set.status = 404;
+        set.headers["Access-Control-Allow-Origin"] = "http://localhost:3001";
+        set.headers["Access-Control-Allow-Credentials"] = "true";
+        return { error: "Video not found" };
+      }
+
+      // Start or update watch session on manifest request
+      await billingService.startSession(userId, params.videoId);
 
       try {
         const mpdPath = join(
@@ -294,10 +300,12 @@ export const videoController = new Elysia({ prefix: "/videos" })
     async (ctx) => {
       const { params, userId, set } = ctx as typeof ctx & UserAuthContext;
 
-      // if (!userId) {
-      //   set.status = 401;
-      //   return { error: "Unauthorized - Please login to access video content" };
-      // }
+      if (!userId) {
+        set.status = 401;
+        set.headers["Access-Control-Allow-Origin"] = "http://localhost:3001";
+        set.headers["Access-Control-Allow-Credentials"] = "true";
+        return { error: "Unauthorized - Please login to access video content" };
+      }
 
       // Validate segment name to prevent path traversal
       const segmentName = params.segmentName;
@@ -307,21 +315,28 @@ export const videoController = new Elysia({ prefix: "/videos" })
         segmentName.includes("\\")
       ) {
         set.status = 400;
+        set.headers["Access-Control-Allow-Origin"] = "http://localhost:3001";
+        set.headers["Access-Control-Allow-Credentials"] = "true";
         return { error: "Invalid segment name" };
       }
 
-      console.log(count);
-      // if (count <= 0) {
-      //   console.log("Expired", count);
-      //   return { error: "Credits Expired" };
-      // }
-      count++
-      // Verify video exists
-      // const video = await videoService.findByVideoId(params.videoId);
-      // if (!video) {
-      //   set.status = 404;
-      //   return { error: "Video not found" };
-      // }
+      // Only charge for video segment requests (.m4s files), not init segments
+      const isVideoSegment =
+        segmentName.endsWith(".m4s") && segmentName.includes("chunk-");
+
+      if (isVideoSegment) {
+        // Deduct balance for this request ($0.0002)
+        const deductResult = await billingService.deductForRequest(userId);
+        if (!deductResult.success) {
+          set.status = 402; // Payment Required
+          set.headers["Access-Control-Allow-Origin"] = "http://localhost:3001";
+          set.headers["Access-Control-Allow-Credentials"] = "true";
+          return { error: deductResult.error || "Insufficient balance" };
+        }
+
+        // Increment request count in session
+        await billingService.incrementRequestCount(userId);
+      }
 
       try {
         const segmentPath = join(PUBLIC_FOLDER, params.videoId, segmentName);

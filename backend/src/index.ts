@@ -4,6 +4,8 @@ import { authController } from "./modules/auth";
 import { userController } from "./modules/user";
 import { creatorController } from "./modules/creator";
 import { videoController } from "./modules/video";
+import { billingController } from "./modules/billing";
+import { startBillingWorker } from "./modules/billing/worker";
 import { cors } from "@elysiajs/cors";
 
 const app = new Elysia()
@@ -26,9 +28,13 @@ const app = new Elysia()
       .use(authController)
       .use(userController)
       .use(creatorController)
-      .use(videoController),
+      .use(videoController)
+      .use(billingController),
   )
   .listen(3000);
+
+// Start the billing settlement worker
+startBillingWorker();
 
 console.log(
   `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`,
@@ -37,3 +43,4 @@ console.log(`📚 API Documentation: http://localhost:3000/api/v1/auth`);
 console.log(`👤 User routes: http://localhost:3000/api/v1/users`);
 console.log(`🎬 Creator routes: http://localhost:3000/api/v1/creators`);
 console.log(`📹 Video routes: http://localhost:3000/api/v1/videos`);
+console.log(`💰 Billing routes: http://localhost:3000/api/v1/billing`);
