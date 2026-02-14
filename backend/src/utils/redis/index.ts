@@ -113,4 +113,9 @@ export const CacheKeys = {
   video: (id: string) => `video:${id}`,
   videoByVideoId: (videoId: string) => `video:vid:${videoId}`,
   creatorVideos: (creatorId: string) => `creator:${creatorId}:videos`,
+  // Billing related keys
+  userPendingDeduction: (userId: string) => `billing:user:${userId}:pending`,
+  userWatchSession: (userId: string) => `billing:user:${userId}:session`,
+  creatorPendingWatchTime: (creatorId: string) =>
+    `billing:creator:${creatorId}:watchtime`,
 };
