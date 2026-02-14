@@ -7,6 +7,7 @@ import { CreateVideoSchema, UpdateVideoSchema } from "./model";
 import { resolve, join } from "path";
 import { readFile, stat } from "fs/promises";
 import { billingService } from "../billing/service";
+import { sendBalanceUpdate } from "../billing/websocket";
 
 // Public folder path for video files
 const PUBLIC_FOLDER = resolve(process.cwd(), "public");
@@ -336,6 +337,16 @@ export const videoController = new Elysia({ prefix: "/videos" })
 
         // Increment request count in session
         await billingService.incrementRequestCount(userId);
+
+        // Send real-time balance update via WebSocket
+        const status = await billingService.getBillingStatus(userId);
+        if (status) {
+          sendBalanceUpdate(
+            userId,
+            status.pendingDeduction,
+            status.effectiveBalance,
+          );
+        }
       }
 
       try {

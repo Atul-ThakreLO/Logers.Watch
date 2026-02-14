@@ -5,7 +5,7 @@ import { userController } from "./modules/user";
 import { creatorController } from "./modules/creator";
 import { videoController } from "./modules/video";
 import { billingController } from "./modules/billing";
-import { startBillingWorker } from "./modules/billing/worker";
+import { billingWebSocket } from "./modules/billing/websocket";
 import { cors } from "@elysiajs/cors";
 
 const app = new Elysia()
@@ -22,6 +22,8 @@ const app = new Elysia()
   .use(dbDecorator)
   .get("/", () => ({ message: "Logers.Watch API", version: "1.0.0" }))
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
+  // WebSocket routes (outside /api/v1 for cleaner URLs)
+  .use(billingWebSocket)
   // API routes
   .group("/api/v1", (app) =>
     app
@@ -33,9 +35,6 @@ const app = new Elysia()
   )
   .listen(3000);
 
-// Start the billing settlement worker
-startBillingWorker();
-
 console.log(
   `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`,
 );
@@ -44,3 +43,4 @@ console.log(`👤 User routes: http://localhost:3000/api/v1/users`);
 console.log(`🎬 Creator routes: http://localhost:3000/api/v1/creators`);
 console.log(`📹 Video routes: http://localhost:3000/api/v1/videos`);
 console.log(`💰 Billing routes: http://localhost:3000/api/v1/billing`);
+console.log(`🔌 Billing WebSocket: ws://localhost:3000/ws/billing?token=<jwt>`);

@@ -3,7 +3,6 @@ import { jwt } from "@elysiajs/jwt";
 import { cookie } from "@elysiajs/cookie";
 import { billingService } from "./service";
 import { JWT_CONFIG } from "../../utils/jwt";
-import { HeartbeatSchema, StartSessionSchema, EndSessionSchema } from "./model";
 
 // JWT Payload for user
 interface UserJWTPayload {
@@ -90,116 +89,6 @@ export const billingController = new Elysia({ prefix: "/billing" })
     {
       detail: {
         summary: "Get billing status including pending deductions",
-        tags: ["Billing"],
-      },
-    },
-  )
-  // Start a watch session
-  .post(
-    "/session/start",
-    async (ctx) => {
-      const { body, userId, set } = ctx as typeof ctx & UserAuthContext;
-
-      if (!userId) {
-        set.status = 401;
-        return { error: "Unauthorized" };
-      }
-
-      const result = await billingService.startSession(userId, body.videoId);
-
-      if (!result.success) {
-        set.status = 400;
-        return { error: result.error };
-      }
-
-      return {
-        success: true,
-        session: result.session,
-      };
-    },
-    {
-      body: StartSessionSchema,
-      detail: {
-        summary: "Start a new watch session",
-        tags: ["Billing"],
-      },
-    },
-  )
-  // Send heartbeat
-  .post(
-    "/session/heartbeat",
-    async (ctx) => {
-      const { body, userId, set } = ctx as typeof ctx & UserAuthContext;
-
-      if (!userId) {
-        set.status = 401;
-        return { error: "Unauthorized" };
-      }
-
-      const result = await billingService.updateHeartbeat(
-        userId,
-        body.videoId,
-        body.currentTime,
-      );
-
-      if (!result.success) {
-        set.status = 400;
-        return { error: result.error };
-      }
-
-      // If we should settle, do it now
-      if (result.shouldSettle && result.session) {
-        const settlementResult = await billingService.settleToDatabase(
-          userId,
-          result.session.creatorId,
-        );
-        console.log(
-          `[Billing] Periodic settlement for user ${userId}:`,
-          settlementResult,
-        );
-      }
-
-      // Get updated billing status
-      const status = await billingService.getBillingStatus(userId);
-
-      return {
-        success: true,
-        sessionActive: true,
-        pendingDeduction: status?.pendingDeduction || 0,
-        effectiveBalance: status?.effectiveBalance || 0,
-      };
-    },
-    {
-      body: HeartbeatSchema,
-      detail: {
-        summary: "Send heartbeat to keep session alive",
-        tags: ["Billing"],
-      },
-    },
-  )
-  // End watch session (called on video stop/close)
-  .post(
-    "/session/end",
-    async (ctx) => {
-      const { body, userId, set } = ctx as typeof ctx & UserAuthContext;
-
-      if (!userId) {
-        set.status = 401;
-        return { error: "Unauthorized" };
-      }
-
-      const result = await billingService.endSession(userId);
-
-      return {
-        success: true,
-        settled: result !== null,
-        settlement: result,
-      };
-    },
-    {
-      body: EndSessionSchema,
-      detail: {
-        summary: "End watch session and settle to database",
         tags: ["Billing"],
       },
     },

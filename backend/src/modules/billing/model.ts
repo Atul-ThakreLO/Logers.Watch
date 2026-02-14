@@ -3,7 +3,6 @@ import { t } from "elysia";
 // Constants
 export const COST_PER_REQUEST = 0.0002; // $0.0002 per request
 export const SETTLEMENT_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-export const HEARTBEAT_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes - consider session stale after this
 export const SESSION_TTL_SECONDS = 24 * 60 * 60; // 24 hours TTL for Redis keys
 
 // Watch session stored in Redis
@@ -33,22 +32,6 @@ export interface SettlementResult {
   error?: string;
 }
 
-// Heartbeat request schema
-export const HeartbeatSchema = t.Object({
-  videoId: t.String(),
-  currentTime: t.Optional(t.Number()), // current playback position in seconds
-});
-
-// Start session request schema
-export const StartSessionSchema = t.Object({
-  videoId: t.String(),
-});
-
-// End session request schema
-export const EndSessionSchema = t.Object({
-  videoId: t.String(),
-});
-
 // Billing status response
 export interface BillingStatus {
   userId: string;
@@ -58,16 +41,21 @@ export interface BillingStatus {
   effectiveBalance: number; // dbBalance - pendingDeduction
 }
 
-// Types for API responses
-export interface HeartbeatResponse {
-  success: boolean;
-  sessionActive: boolean;
-  pendingDeduction: number;
-  effectiveBalance: number;
+// WebSocket message types
+export interface WSBillingMessage {
+  type: "start_session" | "end_session" | "get_status" | "ping";
+  videoId?: string;
 }
 
-export interface SessionResponse {
-  success: boolean;
-  session?: WatchSession;
+export interface WSBillingResponse {
+  type:
+    | "session_started"
+    | "session_ended"
+    | "status_update"
+    | "balance_update"
+    | "error"
+    | "pong"
+    | "settlement_complete";
+  data?: any;
   error?: string;
 }

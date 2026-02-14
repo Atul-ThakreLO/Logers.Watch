@@ -3,7 +3,6 @@ import { videoService } from "../video/service";
 import {
   COST_PER_REQUEST,
   SESSION_TTL_SECONDS,
-  HEARTBEAT_TIMEOUT_MS,
   type WatchSession,
   type SettlementResult,
   type BillingStatus,
@@ -75,8 +74,6 @@ export class BillingService {
     }
 
     const sessionKey = CacheKeys.userWatchSession(userId);
-    const heartbeatKey = CacheKeys.userLastHeartbeat(userId);
-    const activeSessionsKey = CacheKeys.activeSessions();
 
     const now = Date.now();
     const session: WatchSession = {
@@ -91,78 +88,7 @@ export class BillingService {
     // Store session in Redis
     await cache.set(sessionKey, session, SESSION_TTL_SECONDS);
 
-    // Update heartbeat
-    await redis.set(heartbeatKey, now.toString(), "EX", SESSION_TTL_SECONDS);
-
-    // Add to active sessions set
-    await redis.sadd(activeSessionsKey, userId);
-
     return { success: true, session };
-  }
-
-  /**
-   * Update heartbeat and optionally track watch time
-   */
-  async updateHeartbeat(
-    userId: string,
-    videoId: string,
-    currentTime?: number,
-  ): Promise<{
-    success: boolean;
-    session?: WatchSession;
-    shouldSettle: boolean;
-    error?: string;
-  }> {
-    const sessionKey = CacheKeys.userWatchSession(userId);
-    const heartbeatKey = CacheKeys.userLastHeartbeat(userId);
-
-    const session = await cache.get<WatchSession>(sessionKey);
-    if (!session) {
-      // Auto-start session if not exists
-      const startResult = await this.startSession(userId, videoId);
-      if (!startResult.success) {
-        return {
-          success: false,
-          shouldSettle: false,
-          error: startResult.error,
-        };
-      }
-      return {
-        success: true,
-        session: startResult.session,
-        shouldSettle: false,
-      };
-    }
-
-    // Check if watching the same video
-    if (session.videoId !== videoId) {
-      // End current session and start new one
-      await this.endSession(userId);
-      const startResult = await this.startSession(userId, videoId);
-      if (!startResult.success) {
-        return {
-          success: false,
-          shouldSettle: false,
-          error: startResult.error,
-        };
-      }
-      return {
-        success: true,
-        session: startResult.session,
-        shouldSettle: false,
-      };
-    }
-
-    const now = Date.now();
-
-    // Update heartbeat timestamp
-    await redis.set(heartbeatKey, now.toString(), "EX", SESSION_TTL_SECONDS);
-
-    // Check if we should settle (every 10 minutes)
-    const timeSinceLastSettlement = now - session.lastSettlementTime;
-    const shouldSettle = timeSinceLastSettlement >= 10 * 60 * 1000; // 10 minutes
-
-    return { success: true, session, shouldSettle };
   }
 
   /**
@@ -197,8 +123,6 @@ export class BillingService {
    */
   async endSession(userId: string): Promise<SettlementResult | null> {
     const sessionKey = CacheKeys.userWatchSession(userId);
-    const heartbeatKey = CacheKeys.userLastHeartbeat(userId);
-    const activeSessionsKey = CacheKeys.activeSessions();
 
     const session = await cache.get<WatchSession>(sessionKey);
     if (!session) {
@@ -217,10 +141,8 @@ export class BillingService {
     // Settle to database
     const result = await this.settleToDatabase(userId, session.creatorId);
 
-    // Clean up Redis keys
+    // Clean up Redis session key
     await cache.del(sessionKey);
-    await cache.del(heartbeatKey);
-    await redis.srem(activeSessionsKey, userId);
 
     return result;
   }
@@ -336,46 +258,6 @@ export class BillingService {
       dbBalance: user.balance,
       effectiveBalance: user.balance - pendingDeduction,
     };
-  }
-
-  /**
-   * Get all active sessions (for worker to check stale sessions)
-   */
-  async getActiveSessions(): Promise<string[]> {
-    const activeSessionsKey = CacheKeys.activeSessions();
-    return await redis.smembers(activeSessionsKey);
-  }
-
-  /**
-   * Check if a session is stale (no heartbeat for > 2 minutes)
-   */
-  async isSessionStale(userId: string): Promise<boolean> {
-    const heartbeatKey = CacheKeys.userLastHeartbeat(userId);
-    const lastHeartbeat = await redis.get(heartbeatKey);
-
-    if (!lastHeartbeat) {
-      return true;
-    }
-
-    const lastHeartbeatTime = parseInt(lastHeartbeat, 10);
-    const now = Date.now();
-
-    return now - lastHeartbeatTime > HEARTBEAT_TIMEOUT_MS;
-  }
-
-  /**
-   * Process stale sessions (called by background worker)
-   */
-  async processStaleSession(userId: string): Promise<SettlementResult | null> {
-    const isStale = await this.isSessionStale(userId);
-    if (!isStale) {
-      return null;
-    }
-
-    console.log(
-      `[Billing Worker] Processing stale session for user: ${userId}`,
-    );
-    return await this.endSession(userId);
   }
 }
 
