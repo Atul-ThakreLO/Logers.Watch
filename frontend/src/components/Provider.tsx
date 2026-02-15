@@ -6,6 +6,7 @@ import { WagmiProvider } from "wagmi";
 import config from "@/config/rainbowkitConfi";
 import { ReactNode } from "react";
 import Nav from "./Nav/Nav";
+import { AuthProvider } from "@/hooks/useAuth";
 
 const Provider = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient();
@@ -13,8 +14,10 @@ const Provider = ({ children }: { children: ReactNode }) => {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
-          <Nav />
-          {children}
+          <AuthProvider>
+            <Nav />
+            {children}
+          </AuthProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
