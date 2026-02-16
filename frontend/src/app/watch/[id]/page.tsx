@@ -22,10 +22,7 @@ export default async function WatchPage({
           Watch
         </h1>
 
-        <VideoPlayer
-          src={movie.videoUrl}
-          poster={movie.posterUrl}
-        />
+        <VideoPlayer videoId={id} poster={movie.posterUrl} />
 
         <div className="mt-6 border-3 border-black p-6 bg-back shadow-[6px_6px_0px_0px_black]">
           <div className="flex justify-between items-start">

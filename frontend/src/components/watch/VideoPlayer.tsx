@@ -11,14 +11,20 @@ import {
   Minimize,
   RotateCw,
   RotateCcw,
+  Wallet,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useBillingWebSocket } from "@/hooks/useBillingWebSocket";
+
+const API_BASE = "http://localhost:3000";
 
 interface VideoPlayerProps {
-  src: string;
+  videoId: string;
   poster?: string;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoId, poster }) => {
+  const { accessToken, isAuthenticated, user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<MediaPlayerClass | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -32,6 +38,60 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [billingError, setBillingError] = useState<string | null>(null);
+
+  // Billing WebSocket
+  const {
+    isConnected: isBillingConnected,
+    pendingDeduction,
+    effectiveBalance,
+    connect: connectBilling,
+    disconnect: disconnectBilling,
+    startSession,
+    endSession,
+  } = useBillingWebSocket(accessToken, {
+    onBalanceUpdate: (pending, balance) => {
+      console.log(
+        `[Billing] Balance update: pending=$${pending.toFixed(4)}, effective=$${balance.toFixed(2)}`,
+      );
+    },
+    onSessionStarted: (session) => {
+      console.log("[Billing] Session started:", session);
+    },
+    onSessionEnded: (settlement) => {
+      console.log("[Billing] Session ended, settlement:", settlement);
+    },
+    onError: (error) => {
+      console.error("[Billing] Error:", error);
+      setBillingError(error);
+    },
+  });
+
+  // Connect to billing WebSocket when authenticated
+  useEffect(() => {
+    if (isAuthenticated && accessToken) {
+      connectBilling();
+    }
+    return () => {
+      disconnectBilling();
+    };
+  }, [isAuthenticated, accessToken, connectBilling, disconnectBilling]);
+
+  // Start billing session when video starts playing
+  useEffect(() => {
+    if (isPlaying && isBillingConnected && videoId) {
+      startSession(videoId);
+    }
+  }, [isPlaying, isBillingConnected, videoId, startSession]);
+
+  // End billing session when component unmounts or video stops
+  useEffect(() => {
+    return () => {
+      if (isBillingConnected) {
+        endSession();
+      }
+    };
+  }, [isBillingConnected, endSession]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -62,8 +122,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  // Build the streaming URL
+  const streamingUrl = `${API_BASE}/api/v1/videos/stream/${videoId}/manifest.mpd`;
+
   useEffect(() => {
-    if (videoRef.current) {
+    if (videoRef.current && isAuthenticated) {
       // 1. Create a new dash.js MediaPlayer instance
       playerRef.current = MediaPlayer().create();
 
@@ -87,11 +150,25 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
       );
 
       // 2. Initialize the player with the video element and the DASH manifest URL
-      playerRef.current.initialize(videoRef.current, src, false);
+      playerRef.current.initialize(videoRef.current, streamingUrl, false);
 
       // Optional: Add event listeners for error handling or monitoring
       playerRef.current.on(MediaPlayer.events.ERROR, (event) => {
         console.error("Dash.js error:", event.error);
+        // Check for 402 Payment Required
+        const errorObj = event.error;
+        if (
+          typeof errorObj === "object" &&
+          errorObj !== null &&
+          "message" in errorObj
+        ) {
+          const msg = (errorObj as { message: string }).message;
+          if (msg.includes("402") || msg.includes("Insufficient balance")) {
+            setBillingError(
+              "Insufficient balance. Please add funds to continue watching.",
+            );
+          }
+        }
       });
     }
 
@@ -102,7 +179,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
         playerRef.current = null;
       }
     };
-  }, [src]);
+  }, [streamingUrl, isAuthenticated]);
 
   // Auto-hide controls
   useEffect(() => {
@@ -331,11 +408,46 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, poster }) => {
     >
       <video
         ref={videoRef}
-        // src={src}
         poster={poster}
         className="w-full h-auto"
         onClick={togglePlayPause}
       />
+
+      {/* Auth/Billing Error Overlay */}
+      {!isAuthenticated && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+          <div className="text-center p-6 bg-back border-3 border-black shadow-[6px_6px_0px_0px_black]">
+            <p className="text-lg font-bold mb-2">Please sign in to watch</p>
+            <p className="text-sm text-gray-600">
+              Authentication required for video playback
+            </p>
+          </div>
+        </div>
+      )}
+
+      {billingError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+          <div className="text-center p-6 bg-back border-3 border-black shadow-[6px_6px_0px_0px_red]">
+            <p className="text-lg font-bold mb-2 text-red-600">Billing Error</p>
+            <p className="text-sm">{billingError}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Balance Indicator */}
+      {isAuthenticated && showControls && (
+        <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 bg-black/70 border-2 border-primary text-back text-sm font-mono">
+          <Wallet size={16} className="text-primary" />
+          <span>
+            ${effectiveBalance.toFixed(4)}
+            {pendingDeduction > 0 && (
+              <span className="text-yellow-400 ml-1">
+                (-${pendingDeduction.toFixed(4)})
+              </span>
+            )}
+          </span>
+        </div>
+      )}
 
       {/* Custom Controls */}
       <div
