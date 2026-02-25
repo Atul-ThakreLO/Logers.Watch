@@ -233,6 +233,44 @@ export class BillingService {
   }
 
   /**
+   * Recharge user balance
+   */
+  async rechargeBalance(
+    userId: string,
+    amount: number,
+    transactionHash?: string,
+  ): Promise<{ success: boolean; newBalance: number; error?: string }> {
+    if (amount <= 0) {
+      return {
+        success: false,
+        newBalance: 0,
+        error: "Amount must be positive",
+      };
+    }
+
+    try {
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          balance: { increment: amount },
+          lastRechargeAmount: amount,
+        },
+      });
+
+      // Invalidate user cache
+      await cache.del(CacheKeys.user(userId));
+
+      return { success: true, newBalance: user.balance };
+    } catch (error) {
+      return {
+        success: false,
+        newBalance: 0,
+        error: error instanceof Error ? error.message : "Recharge failed",
+      };
+    }
+  }
+
+  /**
    * Get billing status for a user
    */
   async getBillingStatus(userId: string): Promise<BillingStatus | null> {
