@@ -8,10 +8,10 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
-import { userAuthService, userService, User } from "@/lib/api";
+import { creatorAuthService, creatorService, Creator } from "@/lib/api";
 
-interface AuthContextType {
-  user: User | null;
+interface CreatorAuthContextType {
+  creator: Creator | null;
   accessToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -23,15 +23,16 @@ interface AuthContextType {
     name: string,
     email: string,
     password: string,
+    company?: string,
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshCreator: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const CreatorAuthContext = createContext<CreatorAuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+export function CreatorAuthProvider({ children }: { children: ReactNode }) {
+  const [creator, setCreator] = useState<Creator | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -39,19 +40,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const storedToken = localStorage.getItem("accessToken");
+        const storedToken = localStorage.getItem("creatorAccessToken");
         const userType = localStorage.getItem("userType");
 
-        if (storedToken && userType === "user") {
+        if (storedToken && userType === "creator") {
           setAccessToken(storedToken);
-          const { user } = await userService.getProfile();
-          setUser(user);
+          const { creator } = await creatorService.getProfile();
+          setCreator(creator);
         }
       } catch (error) {
-        console.error("Auth check failed:", error);
+        console.error("Creator auth check failed:", error);
         // Clear invalid tokens
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("creatorAccessToken");
+        localStorage.removeItem("creatorRefreshToken");
         localStorage.removeItem("userType");
       } finally {
         setIsLoading(false);
@@ -63,13 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const response = await userAuthService.login({ email, password });
+      const response = await creatorAuthService.login({ email, password });
 
       setAccessToken(response.accessToken);
 
-      // Fetch user profile after login
-      const { user } = await userService.getProfile();
-      setUser(user);
+      // Fetch creator profile after login
+      const { creator } = await creatorService.getProfile();
+      setCreator(creator);
 
       return { success: true };
     } catch (error: any) {
@@ -81,9 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (name: string, email: string, password: string) => {
+    async (name: string, email: string, password: string, company?: string) => {
       try {
-        await userAuthService.register({ name, email, password });
+        await creatorAuthService.register({ name, email, password, company });
         return { success: true };
       } catch (error: any) {
         return {
@@ -97,46 +98,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await userAuthService.logout();
+      await creatorAuthService.logout();
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      setUser(null);
+      setCreator(null);
       setAccessToken(null);
     }
   }, []);
 
-  const refreshUser = useCallback(async () => {
+  const refreshCreator = useCallback(async () => {
     try {
-      const { user } = await userService.getProfile();
-      setUser(user);
+      const { creator } = await creatorService.getProfile();
+      setCreator(creator);
     } catch (error) {
-      console.error("Failed to refresh user:", error);
+      console.error("Failed to refresh creator:", error);
     }
   }, []);
 
   return (
-    <AuthContext.Provider
+    <CreatorAuthContext.Provider
       value={{
-        user,
+        creator,
         accessToken,
         isLoading,
-        isAuthenticated: !!user,
+        isAuthenticated: !!creator,
         login,
         register,
         logout,
-        refreshUser,
+        refreshCreator,
       }}
     >
       {children}
-    </AuthContext.Provider>
+    </CreatorAuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
+export function useCreatorAuth() {
+  const context = useContext(CreatorAuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error("useCreatorAuth must be used within a CreatorAuthProvider");
   }
   return context;
 }

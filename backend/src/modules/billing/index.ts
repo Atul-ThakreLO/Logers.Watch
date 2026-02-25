@@ -126,4 +126,42 @@ export const billingController = new Elysia({ prefix: "/billing" })
         tags: ["Billing"],
       },
     },
+  )
+  // Recharge balance
+  .post(
+    "/recharge",
+    async (ctx) => {
+      const { body, userId, set } = ctx as typeof ctx & UserAuthContext;
+
+      if (!userId) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+
+      const result = await billingService.rechargeBalance(
+        userId,
+        body.amount,
+        body.transactionHash,
+      );
+
+      if (!result.success) {
+        set.status = 400;
+        return { error: result.error || "Recharge failed" };
+      }
+
+      return {
+        success: true,
+        newBalance: result.newBalance,
+      };
+    },
+    {
+      body: t.Object({
+        amount: t.Number({ minimum: 0.01 }),
+        transactionHash: t.Optional(t.String()),
+      }),
+      detail: {
+        summary: "Recharge user balance",
+        tags: ["Billing"],
+      },
+    },
   );
