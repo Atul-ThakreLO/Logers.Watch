@@ -7,20 +7,17 @@ import axios, {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
 
-// Create axios instance with default config
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // Send cookies with requests
+  withCredentials: true,
 });
 
-// Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get token from localStorage if available
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("accessToken");
       if (token && config.headers) {
@@ -34,7 +31,6 @@ apiClient.interceptors.request.use(
   },
 );
 
-// Response interceptor for error handling and token refresh
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -42,7 +38,6 @@ apiClient.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // Handle 401 errors - try to refresh token
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -71,7 +66,6 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
 
@@ -87,14 +81,12 @@ apiClient.interceptors.response.use(
 
 export default apiClient;
 
-// Helper type for API responses
 export interface ApiResponse<T> {
   data: T;
   message?: string;
   error?: string;
 }
 
-// Helper type for paginated responses
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;

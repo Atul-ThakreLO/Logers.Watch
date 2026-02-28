@@ -52,7 +52,7 @@ export default function BalancePage() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-8 flex items-center justify-center min-h-[400px]">
+      <div className="bg-white border-2 border-black p-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -60,7 +60,7 @@ export default function BalancePage() {
 
   if (error) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-8">
+      <div className="bg-white border-2 border-black p-8">
         <div className="text-center text-red-500">
           <AlertCircle className="h-12 w-12 mx-auto mb-4" />
           <p>{error}</p>
@@ -83,7 +83,7 @@ export default function BalancePage() {
   return (
     <div className="space-y-6">
       {/* Balance Overview */}
-      <div className="bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-lg p-8 text-white">
+      <div className="bg-primary border-2 border-black p-8 text-white hover:shadow-[4px_4px_0_0_#000] transition-shadow">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-white/80 mb-2">Available Balance</p>
@@ -100,7 +100,7 @@ export default function BalancePage() {
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+            className="p-2 bg-white/20 border-2 border-white/40 hover:bg-white/30 transition-colors"
           >
             <RefreshCw
               className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`}
@@ -111,7 +111,7 @@ export default function BalancePage() {
         <div className="mt-8">
           <Link
             href="/profile/recharge"
-            className="inline-block bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-white/90 transition-all"
+            className="inline-block bg-white text-primary px-6 py-3 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all"
           >
             Add Funds
           </Link>
@@ -120,9 +120,9 @@ export default function BalancePage() {
 
       {/* Balance Details */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-green-100 border-2 border-green-600 flex items-center justify-center">
               <Wallet className="w-6 h-6 text-green-600" />
             </div>
             <div>
@@ -134,9 +134,9 @@ export default function BalancePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-orange-100 border-2 border-orange-600 flex items-center justify-center">
               <TrendingDown className="w-6 h-6 text-orange-600" />
             </div>
             <div>
@@ -148,9 +148,9 @@ export default function BalancePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-100 border-2 border-blue-600 flex items-center justify-center">
               <Clock className="w-6 h-6 text-blue-600" />
             </div>
             <div>
@@ -165,25 +165,25 @@ export default function BalancePage() {
 
       {/* Active Session Details */}
       {billingStatus?.activeSession && (
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Active Watching Session
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 bg-gray-50 border-2 border-gray-200">
               <p className="text-sm text-gray-500">Watch Time</p>
               <p className="text-lg font-semibold text-gray-900">
                 {Math.floor(billingStatus.activeSession.currentWatchTime / 60)}m{" "}
                 {Math.floor(billingStatus.activeSession.currentWatchTime % 60)}s
               </p>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 bg-gray-50 border-2 border-gray-200">
               <p className="text-sm text-gray-500">Pending Amount</p>
               <p className="text-lg font-semibold text-gray-900">
                 ${billingStatus.activeSession.pendingAmount.toFixed(4)}
               </p>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 bg-gray-50 border-2 border-gray-200">
               <p className="text-sm text-gray-500">Started</p>
               <p className="text-lg font-semibold text-gray-900">
                 {new Date(
@@ -191,7 +191,7 @@ export default function BalancePage() {
                 ).toLocaleTimeString()}
               </p>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 bg-gray-50 border-2 border-gray-200">
               <p className="text-sm text-gray-500">Rate</p>
               <p className="text-lg font-semibold text-gray-900">$0.001/sec</p>
             </div>
@@ -201,8 +201,8 @@ export default function BalancePage() {
 
       {/* Low Balance Warning */}
       {availableBalance < 1 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 flex items-start gap-4">
-          <AlertCircle className="h-6 w-6 text-yellow-600 flex-shrink-0 mt-0.5" />
+        <div className="bg-yellow-50 border-2 border-yellow-500 p-6 flex items-start gap-4">
+          <AlertCircle className="h-6 w-6 text-yellow-600 shrink-0 mt-0.5" />
           <div>
             <h4 className="font-semibold text-yellow-800">
               Low Balance Warning

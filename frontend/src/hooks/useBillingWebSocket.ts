@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 const WS_URL = "ws://localhost:3000/ws/billing";
 
-// WebSocket message types
 interface WSMessage {
   type: string;
   data?: any;
@@ -87,7 +86,6 @@ export function useBillingWebSocket(
       return;
     }
 
-    // Close existing connection if any
     if (wsRef.current) {
       wsRef.current.close();
     }
@@ -138,7 +136,6 @@ export function useBillingWebSocket(
             break;
 
           case "pong":
-            // Heartbeat response
             break;
 
           default:
@@ -158,7 +155,6 @@ export function useBillingWebSocket(
       console.log("[BillingWS] Disconnected:", event.code, event.reason);
       setIsConnected(false);
 
-      // Auto-reconnect after 3 seconds if not intentionally closed
       if (event.code !== 1000) {
         reconnectTimeoutRef.current = setTimeout(() => {
           console.log("[BillingWS] Attempting to reconnect...");
@@ -214,14 +210,12 @@ export function useBillingWebSocket(
     send({ type: "get_status" });
   }, [send]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       disconnect();
     };
   }, [disconnect]);
 
-  // Ping/keepalive every 30 seconds
   useEffect(() => {
     if (!isConnected) return;
 

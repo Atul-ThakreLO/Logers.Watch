@@ -62,7 +62,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-8 flex items-center justify-center min-h-[400px]">
+      <div className="bg-white border-2 border-black p-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -70,7 +70,7 @@ export default function ProfilePage() {
 
   if (error) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-8">
+      <div className="bg-white border-2 border-black p-8">
         <div className="text-center text-red-500">
           <p>{error}</p>
           <button
@@ -87,10 +87,10 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       {/* Profile Header */}
-      <div className="bg-white rounded-xl shadow-sm p-8">
+      <div className="bg-white border-2 border-black p-8 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-6">
-            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
+            <div className="w-24 h-24 bg-primary/10 border-2 border-black flex items-center justify-center">
               <UserIcon className="w-12 h-12 text-primary" />
             </div>
             <div>
@@ -106,7 +106,7 @@ export default function ProfilePage() {
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="p-2 text-green-500 hover:bg-green-50 rounded-lg"
+                    className="p-2 text-green-500 hover:bg-green-50"
                   >
                     {isSaving ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -116,7 +116,7 @@ export default function ProfilePage() {
                   </button>
                   <button
                     onClick={handleCancel}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                    className="p-2 text-red-500 hover:bg-red-50"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -128,7 +128,7 @@ export default function ProfilePage() {
                   </h2>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
@@ -145,9 +145,9 @@ export default function ProfilePage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-green-100 border-2 border-green-600 flex items-center justify-center">
               <Wallet className="w-6 h-6 text-green-600" />
             </div>
             <div>
@@ -159,9 +159,9 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-100 border-2 border-blue-600 flex items-center justify-center">
               <Calendar className="w-6 h-6 text-blue-600" />
             </div>
             <div>
@@ -173,9 +173,9 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-purple-100 border-2 border-purple-600 flex items-center justify-center">
               <UserIcon className="w-6 h-6 text-purple-600" />
             </div>
             <div>
@@ -194,22 +194,22 @@ export default function ProfilePage() {
       </div>
 
       {/* Account Info */}
-      <div className="bg-white rounded-xl shadow-sm p-8">
+      <div className="bg-white border-2 border-black p-8 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">
           Account Information
         </h3>
         <div className="space-y-4">
-          <div className="flex justify-between py-3 border-b border-gray-100">
+          <div className="flex justify-between py-3 border-b-2 border-gray-200">
             <span className="text-gray-500">User ID</span>
             <span className="text-gray-900 font-mono text-sm">{user?.id}</span>
           </div>
-          <div className="flex justify-between py-3 border-b border-gray-100">
+          <div className="flex justify-between py-3 border-b-2 border-gray-200">
             <span className="text-gray-500">Email</span>
             <span className="text-gray-900">{user?.email}</span>
           </div>
-          <div className="flex justify-between py-3 border-b border-gray-100">
+          <div className="flex justify-between py-3 border-b-2 border-gray-200">
             <span className="text-gray-500">Account Status</span>
-            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+            <span className="px-3 py-1 bg-green-100 text-green-700 border-2 border-green-600 text-sm font-medium">
               Active
             </span>
           </div>

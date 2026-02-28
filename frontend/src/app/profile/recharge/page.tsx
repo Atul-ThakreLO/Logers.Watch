@@ -163,7 +163,7 @@ export default function RechargePage() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-8 flex items-center justify-center min-h-[400px]">
+      <div className="bg-white border-2 border-black p-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -171,8 +171,8 @@ export default function RechargePage() {
 
   if (success) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+      <div className="bg-white border-2 border-black p-8 text-center">
+        <div className="w-20 h-20 bg-green-100 border-2 border-green-600 flex items-center justify-center mx-auto mb-6">
           <Check className="w-10 h-10 text-green-600" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -189,9 +189,9 @@ export default function RechargePage() {
   return (
     <div className="space-y-6">
       {/* Current Balance */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+          <div className="w-12 h-12 bg-primary/10 border-2 border-primary flex items-center justify-center">
             <Wallet className="w-6 h-6 text-primary" />
           </div>
           <div>
@@ -204,13 +204,13 @@ export default function RechargePage() {
       </div>
 
       {/* Amount Selection */}
-      <div className="bg-white rounded-xl shadow-sm p-8">
+      <div className="bg-white border-2 border-black p-8 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">
           Select Amount
         </h3>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-500 text-red-600 text-sm">
             {error}
           </div>
         )}
@@ -227,19 +227,19 @@ export default function RechargePage() {
                   setSelectedAmount(amount.value);
                   setUseCustom(false);
                 }}
-                className={`relative p-6 rounded-xl border-2 transition-all ${
+                className={`relative p-6 border-2 transition-all ${
                   isSelected
-                    ? "border-primary bg-primary/5"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-primary bg-primary/5 shadow-[4px_4px_0_0_#000]"
+                    : "border-gray-300 hover:border-black hover:shadow-[4px_4px_0_0_#000]"
                 }`}
               >
                 {amount.popular && (
-                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary text-white text-xs rounded-full">
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-primary text-white text-xs">
                     Popular
                   </span>
                 )}
                 <div
-                  className={`w-10 h-10 ${amount.color} rounded-lg flex items-center justify-center mx-auto mb-3`}
+                  className={`w-10 h-10 ${amount.color} border-2 border-current flex items-center justify-center mx-auto mb-3`}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
@@ -258,7 +258,7 @@ export default function RechargePage() {
               type="checkbox"
               checked={useCustom}
               onChange={(e) => setUseCustom(e.target.checked)}
-              className="w-4 h-4 text-primary rounded focus:ring-primary"
+              className="w-4 h-4 text-primary focus:ring-primary"
             />
             <span className="text-gray-700">Enter custom amount</span>
           </label>
@@ -275,7 +275,7 @@ export default function RechargePage() {
                 placeholder="0.00"
                 min="1"
                 step="0.01"
-                className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-lg text-gray-900"
+                className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary text-lg text-gray-900"
               />
             </div>
           )}
@@ -283,7 +283,7 @@ export default function RechargePage() {
 
         {/* Wallet Info */}
         {isConnected && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+          <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-500">
             <p className="text-sm text-blue-700">
               <span className="font-semibold">Connected Wallet:</span>{" "}
               {address?.slice(0, 6)}...{address?.slice(-4)}
@@ -302,14 +302,14 @@ export default function RechargePage() {
         )}
 
         {/* Summary */}
-        <div className="p-4 bg-gray-50 rounded-lg mb-6">
+        <div className="p-4 bg-gray-50 border-2 border-gray-300 mb-6">
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Amount to Add</span>
             <span className="text-2xl font-bold text-gray-900">
               ${getRechargeAmount().toFixed(2)}
             </span>
           </div>
-          <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
+          <div className="flex justify-between items-center mt-2 pt-2 border-t-2 border-gray-300">
             <span className="text-gray-600">New Balance</span>
             <span className="text-lg font-semibold text-green-600">
               ${((user?.balance || 0) + getRechargeAmount()).toFixed(2)}
@@ -321,7 +321,7 @@ export default function RechargePage() {
         <button
           onClick={handleRecharge}
           disabled={isProcessing || isSending || isConfirming}
-          className="w-full bg-primary text-white py-4 rounded-lg font-semibold hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-primary text-white py-4 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isProcessing || isSending || isConfirming ? (
             <>

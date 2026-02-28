@@ -47,7 +47,6 @@ export const videoService = {
     return response.data;
   },
 
-  // Stream a video segment (returns the URL, actual streaming handled by video player)
   getStreamUrl(videoId: string, filename: string): string {
     const baseUrl =
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";

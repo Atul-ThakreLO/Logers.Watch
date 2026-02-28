@@ -1,8 +1,6 @@
-// API Client
 export { default as apiClient } from "./client";
 export type { ApiResponse, PaginatedResponse } from "./client";
 
-// Auth Services
 export { userAuthService, creatorAuthService } from "./auth";
 export type {
   User,
@@ -14,11 +12,9 @@ export type {
   CreatorAuthResponse,
 } from "./auth";
 
-// User Service
 export { userService } from "./user";
 export type { UpdateUserData } from "./user";
 
-// Creator Service
 export { creatorService } from "./creator";
 export type {
   Video,
@@ -28,15 +24,12 @@ export type {
   UpdateVideoData,
 } from "./creator";
 
-// Billing Service
 export { billingService } from "./billing";
 export type { BillingStatus, RechargeData, SettlementResult } from "./billing";
 
-// Video Service
 export { videoService } from "./video";
 export type { VideoListParams } from "./video";
 
-// Convenience object with all services
 const api = {
   auth: {
     user: () => import("./auth").then((m) => m.userAuthService),

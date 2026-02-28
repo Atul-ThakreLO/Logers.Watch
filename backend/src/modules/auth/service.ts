@@ -217,6 +217,7 @@ export const authMiddleware = new Elysia({ name: "auth-middleware" })
   )
   .use(cookie())
   .derive(
+    { as: 'global' },
     async ({
       jwt,
       cookie,
@@ -229,23 +230,22 @@ export const authMiddleware = new Elysia({ name: "auth-middleware" })
       // Try to get token from Authorization header first
       const authHeader = request.headers.get("authorization");
       let token: string | undefined;
-
       if (authHeader?.startsWith("Bearer ")) {
         token = authHeader.slice(7);
       } else {
         // Fallback to cookie
         const accessTokenCookie = cookie.accessToken as
-          | { value?: string }
-          | undefined;
+        | { value?: string }
+        | undefined;
         if (accessTokenCookie?.value) {
           token = accessTokenCookie.value;
         }
       }
-
+      
       if (!token) {
         return { userId: null, userEmail: null, userName: null };
       }
-
+      
       try {
         const payload = (await jwt.verify(token)) as JWTPayload | false;
         if (!payload || payload.type !== "access") {

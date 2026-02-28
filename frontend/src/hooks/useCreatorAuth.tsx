@@ -36,7 +36,6 @@ export function CreatorAuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing session on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -68,7 +67,6 @@ export function CreatorAuthProvider({ children }: { children: ReactNode }) {
 
       setAccessToken(response.accessToken);
 
-      // Fetch creator profile after login
       const { creator } = await creatorService.getProfile();
       setCreator(creator);
 

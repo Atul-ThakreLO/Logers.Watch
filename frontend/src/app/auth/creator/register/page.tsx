@@ -65,7 +65,7 @@ export default function CreatorRegisterPage() {
 
   if (success) {
     return (
-      <div className="bg-white rounded-2xl shadow-xl p-8 text-center border-t-4 border-secondary">
+      <div className="bg-white shadow-xl p-8 text-center border-3 border-black">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg
             className="w-8 h-8 text-green-500"
@@ -90,7 +90,7 @@ export default function CreatorRegisterPage() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-8 border-t-4 border-secondary">
+    <div className="bg-white shadow-xl p-8 border-3 border-black">
       <div className="text-center mb-8">
         <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
           <Video className="w-8 h-8 text-secondary" />
@@ -120,7 +120,7 @@ export default function CreatorRegisterPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent transition-all text-gray-900"
+              className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-secondary focus:border-transparent transition-all text-gray-900"
               placeholder="Your creator name"
               required
               minLength={2}
@@ -142,7 +142,7 @@ export default function CreatorRegisterPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent transition-all text-gray-900"
+              className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-secondary focus:border-transparent transition-all text-gray-900"
               placeholder="creator@example.com"
               required
             />
@@ -164,7 +164,7 @@ export default function CreatorRegisterPage() {
               type="text"
               value={company}
               onChange={(e) => setCompany(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent transition-all text-gray-900"
+              className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-secondary focus:border-transparent transition-all text-gray-900"
               placeholder="Your company or channel name"
             />
           </div>
@@ -184,7 +184,7 @@ export default function CreatorRegisterPage() {
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent transition-all text-gray-900"
+              className="w-full pl-10 pr-12 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-secondary focus:border-transparent transition-all text-gray-900"
               placeholder="Create a strong password"
               required
               minLength={6}
@@ -217,7 +217,7 @@ export default function CreatorRegisterPage() {
               type={showPassword ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent transition-all text-gray-900"
+              className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-secondary focus:border-transparent transition-all text-gray-900"
               placeholder="Confirm your password"
               required
             />
@@ -227,7 +227,7 @@ export default function CreatorRegisterPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-secondary text-gray-900 py-3 rounded-lg font-semibold hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-secondary text-gray-900 py-3 font-semibold hover:bg-secondary/90 hover:shadow-[4px_4px_0px_0px_black] hover:cursor-pointer border-black border-3 px-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isLoading ? (
             <>

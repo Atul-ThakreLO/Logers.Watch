@@ -50,7 +50,7 @@ export default function CreatorDashboardPage() {
 
   if (error) {
     return (
-      <div className="bg-gray-800 rounded-xl p-8 text-center">
+      <div className="bg-gray-800 border-2 border-gray-600 p-8 text-center">
         <p className="text-red-400">{error}</p>
         <button
           onClick={fetchData}
@@ -85,7 +85,7 @@ export default function CreatorDashboardPage() {
         </div>
         <Link
           href="/creator/upload"
-          className="flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-secondary/90 transition-all"
+          className="flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all"
         >
           <Plus className="h-5 w-5" />
           Upload Video
@@ -94,9 +94,9 @@ export default function CreatorDashboardPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-secondary hover:shadow-[4px_4px_0_0_#facc15] transition-all">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-secondary/20 border-2 border-secondary flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-secondary" />
             </div>
             <div>
@@ -108,9 +108,9 @@ export default function CreatorDashboardPage() {
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-blue-400 hover:shadow-[4px_4px_0_0_#60a5fa] transition-all">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-500/20 border-2 border-blue-400 flex items-center justify-center">
               <Clock className="w-6 h-6 text-blue-400" />
             </div>
             <div>
@@ -122,9 +122,9 @@ export default function CreatorDashboardPage() {
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-purple-400 hover:shadow-[4px_4px_0_0_#c084fc] transition-all">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-purple-500/20 border-2 border-purple-400 flex items-center justify-center">
               <VideoIcon className="w-6 h-6 text-purple-400" />
             </div>
             <div>
@@ -134,9 +134,9 @@ export default function CreatorDashboardPage() {
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-green-400 hover:shadow-[4px_4px_0_0_#4ade80] transition-all">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-green-500/20 border-2 border-green-400 flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-green-400" />
             </div>
             <div>
@@ -153,8 +153,8 @@ export default function CreatorDashboardPage() {
       </div>
 
       {/* Recent Videos */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700">
-        <div className="p-6 border-b border-gray-700 flex justify-between items-center">
+      <div className="bg-gray-800 border-2 border-gray-600">
+        <div className="p-6 border-b-2 border-gray-600 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-white">Recent Videos</h2>
           <Link
             href="/creator/videos"
@@ -175,21 +175,21 @@ export default function CreatorDashboardPage() {
             </p>
             <Link
               href="/creator/upload"
-              className="inline-flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-secondary/90 transition-all"
+              className="inline-flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all"
             >
               <Plus className="h-5 w-5" />
               Upload Video
             </Link>
           </div>
         ) : (
-          <div className="divide-y divide-gray-700">
+          <div className="divide-y-2 divide-gray-600">
             {videos.slice(0, 5).map((video) => (
               <div
                 key={video.id}
                 className="p-6 flex items-center justify-between hover:bg-gray-700/50 transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
+                  <div className="w-16 h-12 bg-gray-700 border-2 border-gray-600 flex items-center justify-center">
                     <VideoIcon className="w-6 h-6 text-gray-500" />
                   </div>
                   <div>
@@ -218,9 +218,9 @@ export default function CreatorDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Link
           href="/creator/upload"
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-secondary transition-colors group"
+          className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-secondary hover:shadow-[4px_4px_0_0_#facc15] transition-all group"
         >
-          <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center mb-4 group-hover:bg-secondary/30 transition-colors">
+          <div className="w-12 h-12 bg-secondary/20 border-2 border-secondary flex items-center justify-center mb-4 group-hover:bg-secondary/30 transition-colors">
             <Plus className="w-6 h-6 text-secondary" />
           </div>
           <h3 className="font-semibold text-white mb-1">Upload New Video</h3>
@@ -231,9 +231,9 @@ export default function CreatorDashboardPage() {
 
         <Link
           href="/creator/analytics"
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-blue-400 transition-colors group"
+          className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-blue-400 hover:shadow-[4px_4px_0_0_#60a5fa] transition-all group"
         >
-          <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-500/30 transition-colors">
+          <div className="w-12 h-12 bg-blue-500/20 border-2 border-blue-400 flex items-center justify-center mb-4 group-hover:bg-blue-500/30 transition-colors">
             <TrendingUp className="w-6 h-6 text-blue-400" />
           </div>
           <h3 className="font-semibold text-white mb-1">View Analytics</h3>
@@ -244,9 +244,9 @@ export default function CreatorDashboardPage() {
 
         <Link
           href="/creator/settings"
-          className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-purple-400 transition-colors group"
+          className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-purple-400 hover:shadow-[4px_4px_0_0_#c084fc] transition-all group"
         >
-          <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-500/30 transition-colors">
+          <div className="w-12 h-12 bg-purple-500/20 border-2 border-purple-400 flex items-center justify-center mb-4 group-hover:bg-purple-500/30 transition-colors">
             <DollarSign className="w-6 h-6 text-purple-400" />
           </div>
           <h3 className="font-semibold text-white mb-1">Payment Settings</h3>

@@ -129,13 +129,13 @@ const Nav = () => {
             <div className="flex items-center gap-3">
               <Link
                 href="/auth/login"
-                className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                className="bg-secondary hover:shadow-[4px_4px_0px_0px_black] hover:bg-secondary/80 hover:cursor-pointer border-black border-3 px-3 py-1 text-black font-medium transition-colors"
               >
                 Login
               </Link>
               <Link
                 href="/auth/register"
-                className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                className="bg-primary hover:shadow-[4px_4px_0px_0px_black] hover:cursor-pointer border-black border-3 px-3 py-1 text-white transition-colors"
               >
                 Sign Up
               </Link>

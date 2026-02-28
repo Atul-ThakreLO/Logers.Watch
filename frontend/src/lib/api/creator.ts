@@ -4,7 +4,6 @@ import { Creator } from "./auth";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
 
-// Create a separate axios instance for creator requests
 const creatorApiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
@@ -14,7 +13,6 @@ const creatorApiClient = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor to add creator auth token
 creatorApiClient.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
@@ -28,7 +26,6 @@ creatorApiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Response interceptor for error handling
 creatorApiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -111,7 +108,6 @@ export const creatorService = {
     return response.data;
   },
 
-  // Video management
   async getVideos(): Promise<{ videos: Video[] }> {
     const response = await creatorApiClient.get<{ videos: Video[] }>(
       "/creators/me/videos",

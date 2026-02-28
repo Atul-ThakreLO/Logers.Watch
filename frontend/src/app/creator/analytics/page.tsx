@@ -60,7 +60,7 @@ export default function CreatorAnalyticsPage() {
 
   if (error) {
     return (
-      <div className="bg-gray-800 rounded-xl p-8 text-center border border-gray-700">
+      <div className="bg-gray-800 p-8 text-center border-2 border-gray-600">
         <p className="text-red-400">{error}</p>
         <button
           onClick={fetchData}
@@ -92,10 +92,10 @@ export default function CreatorAnalyticsPage() {
             <button
               key={range}
               onClick={() => setTimeRange(range)}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 border-2 transition-all ${
                 timeRange === range
-                  ? "bg-secondary text-gray-900"
-                  : "bg-gray-800 text-gray-400 hover:text-white"
+                  ? "bg-secondary text-gray-900 border-black shadow-[4px_4px_0_0_#000]"
+                  : "bg-gray-800 text-gray-400 border-gray-600 hover:text-white hover:border-secondary"
               }`}
             >
               {range === "all" ? "All Time" : range.toUpperCase()}
@@ -106,9 +106,9 @@ export default function CreatorAnalyticsPage() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-green-400 hover:shadow-[4px_4px_0_0_#4ade80] transition-all">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-green-500/20 border-2 border-green-400 flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-green-400" />
             </div>
             <div>
@@ -125,9 +125,9 @@ export default function CreatorAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-blue-400 hover:shadow-[4px_4px_0_0_#60a5fa] transition-all">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-500/20 border-2 border-blue-400 flex items-center justify-center">
               <Clock className="w-6 h-6 text-blue-400" />
             </div>
             <div>
@@ -144,9 +144,9 @@ export default function CreatorAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-purple-400 hover:shadow-[4px_4px_0_0_#c084fc] transition-all">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-purple-500/20 border-2 border-purple-400 flex items-center justify-center">
               <Eye className="w-6 h-6 text-purple-400" />
             </div>
             <div>
@@ -163,9 +163,9 @@ export default function CreatorAnalyticsPage() {
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-secondary hover:shadow-[4px_4px_0_0_#facc15] transition-all">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-yellow-500/20 border-2 border-yellow-400 flex items-center justify-center">
               <BarChart3 className="w-6 h-6 text-yellow-400" />
             </div>
             <div>
@@ -190,7 +190,7 @@ export default function CreatorAnalyticsPage() {
       </div>
 
       {/* Chart Area */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:shadow-[4px_4px_0_0_#facc15] transition-shadow">
         <h3 className="text-lg font-semibold text-white mb-6">
           Earnings Over Time
         </h3>
@@ -204,10 +204,10 @@ export default function CreatorAnalyticsPage() {
             return (
               <div
                 key={index}
-                className="flex-1 bg-secondary/20 rounded-t-sm hover:bg-secondary/40 transition-colors relative group"
+                className="flex-1 bg-secondary/20 hover:bg-secondary/40 transition-colors relative group"
                 style={{ height: `${Math.max(height, 5)}%` }}
               >
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-700 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-gray-600">
                   ${day.earnings.toFixed(2)}
                 </div>
               </div>
@@ -221,15 +221,18 @@ export default function CreatorAnalyticsPage() {
       </div>
 
       {/* Top Performing Videos */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700">
-        <div className="p-6 border-b border-gray-700">
+      <div className="bg-gray-800 border-2 border-gray-600">
+        <div className="p-6 border-b-2 border-gray-600">
           <h3 className="text-lg font-semibold text-white">
             Top Performing Videos
           </h3>
         </div>
-        <div className="divide-y divide-gray-700">
+        <div className="divide-y-2 divide-gray-700">
           {videos.slice(0, 5).map((video, index) => (
-            <div key={video.id} className="p-6 flex items-center gap-4">
+            <div
+              key={video.id}
+              className="p-6 flex items-center gap-4 hover:bg-gray-750 transition-colors"
+            >
               <span className="text-2xl font-bold text-gray-600 w-8">
                 {index + 1}
               </span>

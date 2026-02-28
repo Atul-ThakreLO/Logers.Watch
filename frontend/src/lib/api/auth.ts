@@ -1,6 +1,5 @@
 import apiClient from "./client";
 
-// Types
 export interface User {
   id: string;
   name: string;
@@ -57,7 +56,6 @@ export interface CreatorAuthResponse {
   creator?: Creator;
 }
 
-// User Auth Service
 export const userAuthService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>(
@@ -65,7 +63,6 @@ export const userAuthService = {
       credentials,
     );
 
-    // Store tokens
     if (response.data.accessToken) {
       localStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("userType", "user");
@@ -113,7 +110,7 @@ export const userAuthService = {
   },
 };
 
-// Creator Auth Service
+
 export const creatorAuthService = {
   async login(credentials: LoginCredentials): Promise<CreatorAuthResponse> {
     const response = await apiClient.post<CreatorAuthResponse>(
@@ -121,7 +118,6 @@ export const creatorAuthService = {
       credentials,
     );
 
-    // Store tokens with creator prefix
     if (response.data.accessToken) {
       localStorage.setItem("creatorAccessToken", response.data.accessToken);
       localStorage.setItem("userType", "creator");
