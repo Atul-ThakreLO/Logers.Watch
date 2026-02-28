@@ -35,7 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing session on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -67,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setAccessToken(response.accessToken);
 
-      // Fetch user profile after login
       const { user } = await userService.getProfile();
       setUser(user);
 

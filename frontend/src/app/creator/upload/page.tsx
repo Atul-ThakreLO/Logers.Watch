@@ -67,8 +67,8 @@ export default function UploadVideoPage() {
   if (success) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-gray-800 rounded-xl p-12 text-center border border-gray-700">
-          <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="bg-gray-800 p-12 text-center border-2 border-gray-600">
+          <div className="w-20 h-20 bg-green-500/20 border-2 border-green-400 flex items-center justify-center mx-auto mb-6">
             <Check className="w-10 h-10 text-green-400" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">
@@ -92,8 +92,8 @@ export default function UploadVideoPage() {
       </div>
 
       {/* Info Card */}
-      <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 flex gap-4">
-        <Info className="h-6 w-6 text-blue-400 flex-shrink-0" />
+      <div className="bg-blue-500/10 border-2 border-blue-500 p-6 flex gap-4">
+        <Info className="h-6 w-6 text-blue-400 shrink-0" />
         <div>
           <h3 className="font-semibold text-blue-400 mb-1">How it works</h3>
           <p className="text-blue-300/80 text-sm">
@@ -105,10 +105,10 @@ export default function UploadVideoPage() {
       </div>
 
       {/* Form */}
-      <div className="bg-gray-800 rounded-xl p-8 border border-gray-700">
+      <div className="bg-gray-800 p-8 border-2 border-gray-600 hover:shadow-[4px_4px_0_0_#facc15] transition-shadow">
         {error && (
-          <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+          <div className="mb-6 p-4 bg-red-500/20 border-2 border-red-500 text-red-400 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 shrink-0" />
             {error}
           </div>
         )}
@@ -129,7 +129,7 @@ export default function UploadVideoPage() {
                 value={videoId}
                 onChange={(e) => setVideoId(e.target.value)}
                 placeholder="e.g., my-awesome-video"
-                className="w-full pl-12 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-secondary focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 bg-gray-700 border-2 border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-secondary focus:border-secondary"
               />
             </div>
             <p className="mt-2 text-sm text-gray-500">
@@ -152,7 +152,7 @@ export default function UploadVideoPage() {
                 value={mpdFileUrl}
                 onChange={(e) => setMpdFileUrl(e.target.value)}
                 placeholder="https://cdn.example.com/videos/manifest.mpd"
-                className="w-full pl-12 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-secondary focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 bg-gray-700 border-2 border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-secondary focus:border-secondary"
               />
             </div>
             <p className="mt-2 text-sm text-gray-500">
@@ -164,7 +164,7 @@ export default function UploadVideoPage() {
             <button
               type="submit"
               disabled={isUploading}
-              className="w-full bg-secondary text-gray-900 py-4 rounded-lg font-semibold hover:bg-secondary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-secondary text-gray-900 py-4 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isUploading ? (
                 <>
@@ -183,13 +183,13 @@ export default function UploadVideoPage() {
       </div>
 
       {/* Help Section */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="bg-gray-800 p-6 border-2 border-gray-600">
         <h3 className="font-semibold text-white mb-4">
           Need help with DASH encoding?
         </h3>
         <div className="space-y-3 text-sm text-gray-400">
           <p>Use FFmpeg to convert your video to DASH format:</p>
-          <pre className="bg-gray-900 p-4 rounded-lg overflow-x-auto text-green-400">
+          <pre className="bg-gray-900 p-4 border-2 border-gray-700 overflow-x-auto text-green-400">
             {`ffmpeg -i input.mp4 \\
   -c:v libx264 -c:a aac \\
   -f dash manifest.mpd`}

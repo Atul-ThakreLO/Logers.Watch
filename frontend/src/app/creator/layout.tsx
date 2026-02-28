@@ -64,9 +64,9 @@ export default function CreatorLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-900 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
+      <aside className="w-64 bg-gray-800 border-r-2 border-gray-700 flex flex-col">
         {/* Logo */}
-        <div className="p-6 border-b border-gray-700">
+        <div className="p-6 border-b-2 border-gray-700">
           <Link href="/">
             <h1 className="text-2xl font-bold">
               <span className="text-white">Logers.</span>
@@ -86,10 +86,10 @@ export default function CreatorLayout({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 border-2 transition-all ${
                   isActive
-                    ? "bg-secondary text-gray-900"
-                    : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                    ? "bg-secondary text-gray-900 border-black shadow-[4px_4px_0_0_#000]"
+                    : "text-gray-300 border-transparent hover:bg-gray-700 hover:text-white hover:border-secondary"
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -100,17 +100,17 @@ export default function CreatorLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-gray-700 space-y-2">
+        <div className="p-4 border-t-2 border-gray-700 space-y-2">
           <Link
             href="/"
-            className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-colors"
+            className="flex items-center gap-3 px-4 py-3 text-gray-300 border-2 border-transparent hover:bg-gray-700 hover:text-white hover:border-gray-600 transition-all"
           >
             <Home className="h-5 w-5" />
             <span>Back to Home</span>
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 text-red-400 border-2 border-transparent hover:bg-red-900/20 hover:border-red-500 transition-all"
           >
             <LogOut className="h-5 w-5" />
             <span>Logout</span>

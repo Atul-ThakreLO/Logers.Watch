@@ -91,7 +91,7 @@ export default function CreatorEarningsPage() {
 
   if (error) {
     return (
-      <div className="bg-gray-800 rounded-xl p-8 text-center border border-gray-700">
+      <div className="bg-gray-800 p-8 text-center border-2 border-gray-600">
         <p className="text-red-400">{error}</p>
         <button
           onClick={fetchData}
@@ -117,20 +117,20 @@ export default function CreatorEarningsPage() {
 
       {/* Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-secondary to-yellow-500 rounded-xl p-6 text-gray-900">
+        <div className="bg-secondary p-6 text-gray-900 border-2 border-black shadow-[4px_4px_0_0_#000]">
           <div className="flex items-center gap-3 mb-4">
             <Wallet className="w-6 h-6" />
             <span className="font-medium">Available Balance</span>
           </div>
           <p className="text-4xl font-bold">${availableBalance.toFixed(2)}</p>
-          <button className="mt-4 bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
+          <button className="mt-4 bg-gray-900 text-white px-4 py-2 border-2 border-gray-900 text-sm font-medium hover:bg-gray-800 hover:shadow-[2px_2px_0_0_#000] transition-all">
             Withdraw Funds
           </button>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-blue-400 hover:shadow-[4px_4px_0_0_#60a5fa] transition-all">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-blue-500/20 border-2 border-blue-400 flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-blue-400" />
             </div>
             <span className="font-medium text-gray-300">Pending Earnings</span>
@@ -141,9 +141,9 @@ export default function CreatorEarningsPage() {
           <p className="text-sm text-gray-500 mt-2">Settles in ~24h</p>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-green-400 hover:shadow-[4px_4px_0_0_#4ade80] transition-all">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-green-500/20 border-2 border-green-400 flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-green-400" />
             </div>
             <span className="font-medium text-gray-300">Total Withdrawn</span>
@@ -156,7 +156,7 @@ export default function CreatorEarningsPage() {
       </div>
 
       {/* Earnings Summary */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:shadow-[4px_4px_0_0_#facc15] transition-shadow">
         <h3 className="text-lg font-semibold text-white mb-6">
           Earnings Summary
         </h3>
@@ -195,23 +195,28 @@ export default function CreatorEarningsPage() {
       </div>
 
       {/* Transaction History */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700">
-        <div className="p-6 border-b border-gray-700 flex justify-between items-center">
+      <div className="bg-gray-800 border-2 border-gray-600">
+        <div className="p-6 border-b-2 border-gray-600 flex justify-between items-center">
           <h3 className="text-lg font-semibold text-white">
             Transaction History
           </h3>
-          <button className="flex items-center gap-2 text-secondary hover:text-secondary/80 transition-colors text-sm">
+          <button className="flex items-center gap-2 text-secondary hover:text-secondary/80 transition-colors text-sm border-2 border-secondary px-3 py-1 hover:shadow-[2px_2px_0_0_#facc15]">
             <Download className="w-4 h-4" />
             Export CSV
           </button>
         </div>
-        <div className="divide-y divide-gray-700">
+        <div className="divide-y-2 divide-gray-700">
           {transactions.map((tx) => (
-            <div key={tx.id} className="p-6 flex items-center justify-between">
+            <div
+              key={tx.id}
+              className="p-6 flex items-center justify-between hover:bg-gray-750 transition-colors"
+            >
               <div className="flex items-center gap-4">
                 <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    tx.type === "earning" ? "bg-green-500/20" : "bg-red-500/20"
+                  className={`w-10 h-10 border-2 flex items-center justify-center ${
+                    tx.type === "earning"
+                      ? "bg-green-500/20 border-green-400"
+                      : "bg-red-500/20 border-red-400"
                   }`}
                 >
                   {tx.type === "earning" ? (
@@ -241,11 +246,11 @@ export default function CreatorEarningsPage() {
       </div>
 
       {/* Payout Info */}
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+      <div className="bg-gray-800 p-6 border-2 border-gray-600">
         <h3 className="text-lg font-semibold text-white mb-4">
           Payout Information
         </h3>
-        <div className="flex items-center justify-between py-4 border-b border-gray-700">
+        <div className="flex items-center justify-between py-4 border-b-2 border-gray-700">
           <span className="text-gray-400">Connected Wallet</span>
           <span className="text-white font-mono text-sm">
             {creator?.eoaAddress
@@ -253,7 +258,7 @@ export default function CreatorEarningsPage() {
               : "Not connected"}
           </span>
         </div>
-        <div className="flex items-center justify-between py-4 border-b border-gray-700">
+        <div className="flex items-center justify-between py-4 border-b-2 border-gray-700">
           <span className="text-gray-400">Minimum Withdrawal</span>
           <span className="text-white">$10.00</span>
         </div>

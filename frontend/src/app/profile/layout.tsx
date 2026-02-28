@@ -70,31 +70,31 @@ export default function ProfileLayout({ children }: { children: ReactNode }) {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Sidebar */}
           <aside className="md:col-span-1">
-            <nav className="bg-white rounded-xl shadow-sm p-4 space-y-2">
+            <nav className="bg-white border-2 border-black p-4 space-y-2">
               <Link
                 href="/profile"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 border-2 border-transparent hover:border-black transition-all"
               >
                 <User className="h-5 w-5" />
                 <span>Profile</span>
               </Link>
               <Link
                 href="/profile/balance"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 border-2 border-transparent hover:border-black transition-all"
               >
                 <Wallet className="h-5 w-5" />
                 <span>Balance</span>
               </Link>
               <Link
                 href="/profile/recharge"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 border-2 border-transparent hover:border-black transition-all"
               >
                 <CreditCard className="h-5 w-5" />
                 <span>Recharge</span>
               </Link>
               <Link
                 href="/profile/settings"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 border-2 border-transparent hover:border-black transition-all"
               >
                 <Settings className="h-5 w-5" />
                 <span>Settings</span>

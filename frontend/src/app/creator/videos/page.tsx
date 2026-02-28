@@ -82,7 +82,7 @@ export default function CreatorVideosPage() {
         </div>
         <Link
           href="/creator/upload"
-          className="flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-secondary/90 transition-all"
+          className="flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all"
         >
           <Plus className="h-5 w-5" />
           Upload Video
@@ -90,7 +90,7 @@ export default function CreatorVideosPage() {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400">
+        <div className="p-4 bg-red-500/20 border-2 border-red-500 text-red-400">
           {error}
         </div>
       )}
@@ -103,13 +103,13 @@ export default function CreatorVideosPage() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search videos..."
-          className="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-secondary focus:border-transparent"
+          className="w-full pl-12 pr-4 py-3 bg-gray-800 border-2 border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-secondary focus:border-secondary"
         />
       </div>
 
       {/* Videos Grid */}
       {filteredVideos.length === 0 ? (
-        <div className="bg-gray-800 rounded-xl p-12 text-center border border-gray-700">
+        <div className="bg-gray-800 p-12 text-center border-2 border-gray-600">
           <VideoIcon className="h-16 w-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-300 mb-2">
             {searchQuery ? "No videos found" : "No videos yet"}
@@ -122,7 +122,7 @@ export default function CreatorVideosPage() {
           {!searchQuery && (
             <Link
               href="/creator/upload"
-              className="inline-flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-secondary/90 transition-all"
+              className="inline-flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all"
             >
               <Plus className="h-5 w-5" />
               Upload Video
@@ -134,7 +134,7 @@ export default function CreatorVideosPage() {
           {filteredVideos.map((video) => (
             <div
               key={video.id}
-              className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden hover:border-gray-600 transition-colors"
+              className="bg-gray-800 border-2 border-gray-600 overflow-hidden hover:border-secondary hover:shadow-[4px_4px_0_0_#facc15] transition-all"
             >
               {/* Thumbnail */}
               <div className="aspect-video bg-gray-700 flex items-center justify-center relative">
@@ -142,7 +142,7 @@ export default function CreatorVideosPage() {
                 <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                   <Link
                     href={`/watch/${video.videoId}`}
-                    className="p-3 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+                    className="p-3 bg-white/20 hover:bg-white/30 transition-colors"
                   >
                     <Eye className="w-5 h-5 text-white" />
                   </Link>
@@ -166,13 +166,13 @@ export default function CreatorVideosPage() {
                       onClick={() =>
                         setActiveMenu(activeMenu === video.id ? null : video.id)
                       }
-                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
                     >
                       <MoreVertical className="w-4 h-4" />
                     </button>
 
                     {activeMenu === video.id && (
-                      <div className="absolute right-0 top-full mt-1 bg-gray-700 rounded-lg overflow-hidden shadow-lg z-10 min-w-[150px]">
+                      <div className="absolute right-0 top-full mt-1 bg-gray-700 border-2 border-gray-600 shadow-lg z-10 min-w-[150px]">
                         <Link
                           href={`/watch/${video.videoId}`}
                           className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:bg-gray-600 hover:text-white transition-colors"
@@ -195,7 +195,7 @@ export default function CreatorVideosPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-gray-700">
+                <div className="mt-3 pt-3 border-t-2 border-gray-600">
                   <p className="text-xs text-gray-500 truncate">
                     MPD: {video.mpdFileUrl}
                   </p>
@@ -209,7 +209,7 @@ export default function CreatorVideosPage() {
       {/* Delete Modal */}
       {deleteModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-xl p-8 max-w-md w-full border border-gray-700">
+          <div className="bg-gray-800 p-8 max-w-md w-full border-2 border-gray-600">
             <h3 className="text-xl font-semibold text-white mb-2">
               Delete Video?
             </h3>
@@ -221,14 +221,14 @@ export default function CreatorVideosPage() {
             <div className="flex gap-4">
               <button
                 onClick={() => setDeleteModal(null)}
-                className="flex-1 px-4 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors"
+                className="flex-1 px-4 py-3 border-2 border-gray-600 text-gray-300 hover:border-white hover:shadow-[4px_4px_0_0_rgba(255,255,255,0.3)] transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-red-500 text-white border-2 border-red-600 hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isDeleting ? (
                   <>

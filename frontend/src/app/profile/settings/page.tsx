@@ -46,7 +46,7 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-8 flex items-center justify-center min-h-[400px]">
+      <div className="bg-white border-2 border-black p-8 flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -55,24 +55,24 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       {/* Security Settings */}
-      <div className="bg-white rounded-xl shadow-sm p-8">
+      <div className="bg-white border-2 border-black p-8 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
         <div className="flex items-center gap-3 mb-6">
           <Shield className="h-6 w-6 text-primary" />
           <h3 className="text-lg font-semibold text-gray-900">Security</h3>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between py-4 border-b-2 border-gray-200">
             <div>
               <p className="font-medium text-gray-900">Password</p>
               <p className="text-sm text-gray-500">Last changed: Never</p>
             </div>
-            <button className="px-4 py-2 text-primary border border-primary rounded-lg hover:bg-primary/5 transition-colors">
+            <button className="px-4 py-2 text-primary border-2 border-primary hover:shadow-[4px_4px_0_0_#000] transition-all">
               Change Password
             </button>
           </div>
 
-          <div className="flex items-center justify-between py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between py-4 border-b-2 border-gray-200">
             <div>
               <p className="font-medium text-gray-900">
                 Two-Factor Authentication
@@ -81,7 +81,7 @@ export default function SettingsPage() {
                 Add extra security to your account
               </p>
             </div>
-            <button className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button className="px-4 py-2 text-gray-600 border-2 border-gray-300 hover:border-black hover:shadow-[4px_4px_0_0_#000] transition-all">
               Enable
             </button>
           </div>
@@ -89,14 +89,14 @@ export default function SettingsPage() {
       </div>
 
       {/* Notification Settings */}
-      <div className="bg-white rounded-xl shadow-sm p-8">
+      <div className="bg-white border-2 border-black p-8 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
         <div className="flex items-center gap-3 mb-6">
           <Bell className="h-6 w-6 text-primary" />
           <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
         </div>
 
         <div className="space-y-4">
-          <label className="flex items-center justify-between py-4 border-b border-gray-100 cursor-pointer">
+          <label className="flex items-center justify-between py-4 border-b-2 border-gray-200 cursor-pointer">
             <div>
               <p className="font-medium text-gray-900">Email Notifications</p>
               <p className="text-sm text-gray-500">
@@ -106,11 +106,11 @@ export default function SettingsPage() {
             <input
               type="checkbox"
               defaultChecked
-              className="w-5 h-5 text-primary rounded focus:ring-primary"
+              className="w-5 h-5 text-primary focus:ring-primary"
             />
           </label>
 
-          <label className="flex items-center justify-between py-4 border-b border-gray-100 cursor-pointer">
+          <label className="flex items-center justify-between py-4 border-b-2 border-gray-200 cursor-pointer">
             <div>
               <p className="font-medium text-gray-900">Low Balance Alerts</p>
               <p className="text-sm text-gray-500">
@@ -120,7 +120,7 @@ export default function SettingsPage() {
             <input
               type="checkbox"
               defaultChecked
-              className="w-5 h-5 text-primary rounded focus:ring-primary"
+              className="w-5 h-5 text-primary focus:ring-primary"
             />
           </label>
 
@@ -133,14 +133,14 @@ export default function SettingsPage() {
             </div>
             <input
               type="checkbox"
-              className="w-5 h-5 text-primary rounded focus:ring-primary"
+              className="w-5 h-5 text-primary focus:ring-primary"
             />
           </label>
         </div>
       </div>
 
       {/* Danger Zone */}
-      <div className="bg-white rounded-xl shadow-sm p-8 border border-red-200">
+      <div className="bg-white border-2 border-red-500 p-8 hover:shadow-[4px_4px_0_0_#ef4444] transition-shadow">
         <h3 className="text-lg font-semibold text-red-600 mb-4">Danger Zone</h3>
 
         <div className="flex items-center justify-between">
@@ -152,7 +152,7 @@ export default function SettingsPage() {
           </div>
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-red-500 text-white border-2 border-red-600 hover:shadow-[4px_4px_0_0_#000] transition-all flex items-center gap-2"
           >
             <Trash2 className="h-4 w-4" />
             Delete Account
@@ -163,9 +163,9 @@ export default function SettingsPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full">
+          <div className="bg-white border-2 border-black p-8 max-w-md w-full">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-red-100 border-2 border-red-600 flex items-center justify-center">
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
               <div>
@@ -179,7 +179,7 @@ export default function SettingsPage() {
             </div>
 
             {deleteError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              <div className="mb-4 p-3 bg-red-50 border-2 border-red-500 text-red-600 text-sm">
                 {deleteError}
               </div>
             )}
@@ -192,14 +192,14 @@ export default function SettingsPage() {
             <div className="flex gap-4">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 hover:border-black hover:shadow-[4px_4px_0_0_#000] transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteAccount}
                 disabled={isDeleting}
-                className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-red-500 text-white border-2 border-red-600 hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isDeleting ? (
                   <>

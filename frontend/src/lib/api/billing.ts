@@ -55,7 +55,6 @@ export const billingService = {
     return response.data;
   },
 
-  // Get transaction history (if implemented in backend)
   async getHistory(): Promise<{ transactions: any[] }> {
     const response = await apiClient.get<{ transactions: any[] }>(
       "/billing/history",

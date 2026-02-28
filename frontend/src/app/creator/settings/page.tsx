@@ -141,20 +141,20 @@ export default function CreatorSettingsPage() {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400">
+        <div className="p-4 bg-red-500/20 border-2 border-red-500 text-red-400">
           {error}
         </div>
       )}
 
       {saveSuccess && (
-        <div className="p-4 bg-green-500/20 border border-green-500/50 rounded-lg text-green-400 flex items-center gap-2">
+        <div className="p-4 bg-green-500/20 border-2 border-green-500 text-green-400 flex items-center gap-2">
           <Check className="w-5 h-5" />
           Settings saved successfully!
         </div>
       )}
 
       {/* Profile Settings */}
-      <div className="bg-gray-800 rounded-xl p-8 border border-gray-700">
+      <div className="bg-gray-800 p-8 border-2 border-gray-600 hover:shadow-[4px_4px_0_0_#facc15] transition-shadow">
         <div className="flex items-center gap-3 mb-6">
           <User className="w-6 h-6 text-secondary" />
           <h2 className="text-xl font-semibold text-white">Profile</h2>
@@ -171,7 +171,7 @@ export default function CreatorSettingsPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-secondary focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 bg-gray-700 border-2 border-gray-600 text-white focus:ring-2 focus:ring-secondary focus:border-secondary"
               />
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function CreatorSettingsPage() {
                 type="email"
                 value={creator?.email || ""}
                 disabled
-                className="w-full pl-12 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
+                className="w-full pl-12 pr-4 py-3 bg-gray-700/50 border-2 border-gray-600 text-gray-400 cursor-not-allowed"
               />
             </div>
             <p className="mt-1 text-xs text-gray-500">
@@ -205,7 +205,7 @@ export default function CreatorSettingsPage() {
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
                 placeholder="Optional"
-                className="w-full pl-12 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-secondary focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 bg-gray-700 border-2 border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-secondary focus:border-secondary"
               />
             </div>
           </div>
@@ -213,7 +213,7 @@ export default function CreatorSettingsPage() {
           <button
             onClick={handleSaveProfile}
             disabled={isSaving}
-            className="flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-secondary/90 transition-all disabled:opacity-50"
+            className="flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50"
           >
             {isSaving ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -226,7 +226,7 @@ export default function CreatorSettingsPage() {
       </div>
 
       {/* Wallet Settings */}
-      <div className="bg-gray-800 rounded-xl p-8 border border-gray-700">
+      <div className="bg-gray-800 p-8 border-2 border-gray-600 hover:shadow-[4px_4px_0_0_#facc15] transition-shadow">
         <div className="flex items-center gap-3 mb-6">
           <Wallet className="w-6 h-6 text-secondary" />
           <h2 className="text-xl font-semibold text-white">Payout Wallet</h2>
@@ -245,13 +245,13 @@ export default function CreatorSettingsPage() {
                   value={eoaAddress}
                   onChange={(e) => setEoaAddress(e.target.value)}
                   placeholder="0x..."
-                  className="w-full pl-12 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-secondary focus:border-transparent font-mono text-sm"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-700 border-2 border-gray-600 text-white placeholder-gray-500 focus:ring-2 focus:ring-secondary focus:border-secondary font-mono text-sm"
                 />
               </div>
               {isConnected && (
                 <button
                   onClick={handleConnectWallet}
-                  className="px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-600 transition-colors"
+                  className="px-4 py-3 bg-gray-700 border-2 border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-secondary transition-all"
                 >
                   Use Connected
                 </button>
@@ -265,7 +265,7 @@ export default function CreatorSettingsPage() {
           <button
             onClick={handleSaveWallet}
             disabled={isSaving || !eoaAddress.trim()}
-            className="flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-secondary/90 transition-all disabled:opacity-50"
+            className="flex items-center gap-2 bg-secondary text-gray-900 px-6 py-3 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50"
           >
             {isSaving ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -278,19 +278,19 @@ export default function CreatorSettingsPage() {
       </div>
 
       {/* Security Settings */}
-      <div className="bg-gray-800 rounded-xl p-8 border border-gray-700">
+      <div className="bg-gray-800 p-8 border-2 border-gray-600">
         <div className="flex items-center gap-3 mb-6">
           <Shield className="w-6 h-6 text-secondary" />
           <h2 className="text-xl font-semibold text-white">Security</h2>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between py-4 border-b border-gray-700">
+          <div className="flex items-center justify-between py-4 border-b-2 border-gray-700">
             <div>
               <p className="font-medium text-white">Password</p>
               <p className="text-sm text-gray-500">Last changed: Never</p>
             </div>
-            <button className="px-4 py-2 text-secondary border border-secondary rounded-lg hover:bg-secondary/10 transition-colors">
+            <button className="px-4 py-2 text-secondary border-2 border-secondary hover:shadow-[4px_4px_0_0_#facc15] transition-all">
               Change Password
             </button>
           </div>
@@ -304,7 +304,7 @@ export default function CreatorSettingsPage() {
                 Add extra security to your account
               </p>
             </div>
-            <button className="px-4 py-2 text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-700 transition-colors">
+            <button className="px-4 py-2 text-gray-300 border-2 border-gray-600 hover:bg-gray-700 hover:border-gray-500 transition-all">
               Enable
             </button>
           </div>
@@ -312,7 +312,7 @@ export default function CreatorSettingsPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="bg-gray-800 rounded-xl p-8 border border-red-500/50">
+      <div className="bg-gray-800 p-8 border-2 border-red-500 hover:shadow-[4px_4px_0_0_#ef4444] transition-shadow">
         <h2 className="text-xl font-semibold text-red-400 mb-4">Danger Zone</h2>
 
         <div className="flex items-center justify-between">
@@ -324,7 +324,7 @@ export default function CreatorSettingsPage() {
           </div>
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white border-2 border-red-600 hover:shadow-[4px_4px_0_0_#991b1b] transition-all"
           >
             <Trash2 className="h-4 w-4" />
             Delete Account
@@ -335,9 +335,9 @@ export default function CreatorSettingsPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-xl p-8 max-w-md w-full border border-gray-700">
+          <div className="bg-gray-800 p-8 max-w-md w-full border-2 border-gray-600 shadow-[8px_8px_0_0_#facc15]">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-red-500/20 border-2 border-red-400 flex items-center justify-center">
                 <AlertTriangle className="h-6 w-6 text-red-400" />
               </div>
               <div>
@@ -351,7 +351,7 @@ export default function CreatorSettingsPage() {
             </div>
 
             {deleteError && (
-              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+              <div className="mb-4 p-3 bg-red-500/20 border-2 border-red-500 text-red-400 text-sm">
                 {deleteError}
               </div>
             )}
@@ -364,14 +364,14 @@ export default function CreatorSettingsPage() {
             <div className="flex gap-4">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors"
+                className="flex-1 px-4 py-3 border-2 border-gray-600 text-gray-300 hover:bg-gray-700 hover:shadow-[4px_4px_0_0_#4b5563] transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteAccount}
                 disabled={isDeleting}
-                className="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-3 bg-red-500 text-white border-2 border-red-600 hover:shadow-[4px_4px_0_0_#991b1b] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isDeleting ? (
                   <>
