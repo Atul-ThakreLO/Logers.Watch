@@ -11,15 +11,17 @@ import {IERC20Permit} from "@openzeppelin-contracts/token/ERC20/extensions/IERC2
 import {IERC20} from "@openzeppelin-contracts/interfaces/IERC20.sol";
 import {AccessControl} from "@openzeppelin-contracts/access/AccessControl.sol";
 import {MerkleProof} from "@openzeppelin-contracts/utils/cryptography/MerkleProof.sol";
+import {ReentrancyGuard} from "@openzeppelin-contracts/utils/ReentrancyGuard.sol";
 
 pragma solidity ^0.8.24;
 
-contract LogersWatch is Ownable, AccessControl {
+contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
     error LogersWatch__TokenNotSupported();
     error LogersWatch__AmountMustMoreThanZero();
     error LogersWatch__PermitFailed();
     error LogersWatch__ClaimFail();
     error LogersWatch__UnAuthorizedAccount();
+    error LogersWatch__MerkleRootNotSet();
 
     mapping(address creator => bool status) isVerifiedCreator;
     mapping(address creator => uint256 withdrawn) creatorWithdrawn;
@@ -48,7 +50,11 @@ contract LogersWatch is Ownable, AccessControl {
     event RevokeClaimRole(address indexed creator);
     event ChangePlatformFee(uint256 newFee);
 
-    constructor() Ownable(msg.sender) {}
+    constructor(address[] memory supportedTokens) Ownable(msg.sender) {
+        for(uint8 i = 0; i < supportedTokens.length; i++) {
+            isSupportedTokens[supportedTokens[i]] = true;
+        }
+    }
 
     modifier amountNotZero(uint256 value) {
         if (value <= 0) revert LogersWatch__AmountMustMoreThanZero();
@@ -102,7 +108,10 @@ contract LogersWatch is Ownable, AccessControl {
         bytes32[] memory proof,
         uint256 totalEarnings,
         address token
-    ) public onlyRole(CREATOR_CLAIM_ROLE) isTokenSupported(token) {
+    ) public nonReentrant onlyRole(CREATOR_CLAIM_ROLE) isTokenSupported(token) {
+        if(MERKLE_ROOT == bytes32(0)) {
+            revert LogersWatch__MerkleRootNotSet();
+        }
         if (!isVerifiedCreator[msg.sender]) {
             revert LogersWatch__UnAuthorizedAccount();
         }
