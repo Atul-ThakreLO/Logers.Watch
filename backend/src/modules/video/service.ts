@@ -4,15 +4,24 @@ import type {
   UpdateVideoDTO,
   VideoResponse,
   VideoWithCreator,
+  VideoStatus,
 } from "./model";
 import type { Video } from "../../generated/prisma/client";
+import { nanoid } from "nanoid";
 
 // Cache TTL in seconds (10 minutes for videos)
 const VIDEO_CACHE_TTL = 600;
 
 export class VideoService {
   /**
-   * Create a new video
+   * Generate unique video ID
+   */
+  generateVideoId(): string {
+    return `v_${nanoid(12)}`;
+  }
+
+  /**
+   * Create a new video (for upload - status PENDING)
    */
   async create(data: CreateVideoDTO): Promise<VideoResponse> {
     // Check if videoId already exists
@@ -24,8 +33,9 @@ export class VideoService {
     const video = await prisma.video.create({
       data: {
         videoId: data.videoId,
-        mpdFileUrl: data.mpdFileUrl,
+        title: data.title,
         creatorId: data.creatorId,
+        status: "PENDING",
       },
     });
 
@@ -40,7 +50,40 @@ export class VideoService {
     // Invalidate creator's videos cache
     await cache.del(CacheKeys.creatorVideos(data.creatorId));
 
-    return video;
+    return video as VideoResponse;
+  }
+
+  /**
+   * Update video status
+   */
+  async updateStatus(
+    videoId: string,
+    status: VideoStatus,
+    data?: {
+      mpdFileUrl?: string;
+      duration?: number;
+      segmentCount?: number;
+      errorMessage?: string;
+    },
+  ): Promise<VideoResponse | null> {
+    try {
+      const video = await prisma.video.update({
+        where: { videoId },
+        data: {
+          status,
+          ...data,
+        },
+      });
+
+      // Invalidate caches
+      await cache.del(CacheKeys.video(video.id));
+      await cache.del(CacheKeys.videoByVideoId(video.videoId));
+      await cache.del(CacheKeys.creatorVideos(video.creatorId));
+
+      return video as VideoResponse;
+    } catch {
+      return null;
+    }
   }
 
   /**

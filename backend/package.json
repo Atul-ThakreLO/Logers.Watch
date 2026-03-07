@@ -4,6 +4,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts",
+    "worker": "bun run src/workers/video.worker.ts",
+    "worker:dev": "bun run --watch src/workers/video.worker.ts",
     "db:generate": "bunx prisma generate",
     "db:migrate": "bunx prisma migrate dev",
     "db:push": "bunx prisma db push",
@@ -16,9 +18,11 @@
     "@openzeppelin/merkle-tree": "^1.0.8",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
+    "bullmq": "^5.70.4",
     "croner": "^10.0.1",
     "elysia": "latest",
     "ioredis": "^5.9.2",
+    "nanoid": "^5.1.6",
     "pg": "^8.18.0",
     "prisma": "^7.3.0",
     "viem": "^2.47.0"

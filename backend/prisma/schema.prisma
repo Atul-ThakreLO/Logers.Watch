@@ -48,16 +48,29 @@ model Creator {
 
 // Video model
 model Video {
-  id         String   @id @default(uuid())
-  videoId    String   @unique // external video identifier
-  mpdFileUrl String   // DASH manifest URL
-  creatorId  String
-  creator    Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String      @id @default(uuid())
+  videoId      String      @unique // external video identifier (used for folder name)
+  title        String?     // optional video title
+  mpdFileUrl   String?     // DASH manifest URL (set after processing)
+  status       VideoStatus @default(PENDING)
+  duration     Int?        // video duration in seconds
+  segmentCount Int?        // number of segments generated
+  errorMessage String?     // error message if processing failed
+  creatorId    String
+  creator      Creator     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   @@index([videoId])
   @@index([creatorId])
+  @@index([status])
+}
+
+enum VideoStatus {
+  PENDING     // video uploaded, waiting for processing
+  PROCESSING  // FFmpeg is converting
+  READY       // processing complete, video available
+  FAILED      // processing failed
 }
 
 model RefreshToken {
