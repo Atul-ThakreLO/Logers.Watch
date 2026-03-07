@@ -31,7 +31,7 @@ const app = new Elysia()
       .use(userController)
       .use(creatorController)
       .use(videoController)
-      .use(billingController),
+      .use(billingController)
   )
   .listen(3000);
 

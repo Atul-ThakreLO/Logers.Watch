@@ -71,3 +71,32 @@ model RefreshToken {
   @@index([token])
   @@index([userId])
 }
+
+// Merkle Tree model - stores merkle root and proofs
+model MerkleTree {
+  id              String            @id @default(uuid())
+  root            String            @unique // merkle root hash
+  transactionHash String?           // blockchain tx hash when root was set
+  creatorsCount   Int               // number of creators in tree
+  totalEarnings   String            // total earnings in tree (stored as string for bigint)
+  isActive        Boolean           @default(true) // current active tree
+  createdAt       DateTime          @default(now())
+  proofs          MerkleTreeProof[]
+
+  @@index([root])
+  @@index([isActive])
+}
+
+// Merkle Tree Proofs - stores individual creator proofs
+model MerkleTreeProof {
+  id            String     @id @default(uuid())
+  merkleTreeId  String
+  merkleTree    MerkleTree @relation(fields: [merkleTreeId], references: [id], onDelete: Cascade)
+  creatorAddress String    // creator wallet address
+  totalEarnings String     // earnings for this creator (stored as string for bigint)
+  proof         String[]   // proof array
+  createdAt     DateTime   @default(now())
+
+  @@unique([merkleTreeId, creatorAddress])
+  @@index([creatorAddress])
+}
