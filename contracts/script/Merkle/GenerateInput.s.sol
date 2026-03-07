@@ -6,14 +6,14 @@ import {Script} from "forge-std/Script.sol";
 import {console} from "forge-std/console.sol";
 
 contract GenerateInput is Script {
-    string constant FILE_PATH = "script/target/input.json";
+    string constant FILE_PATH = "script/Merkle/target/input.json";
 
     function run() public {
         string[] memory types = new string[](2);
         types[0] = "address";
         types[1] = "uint";
 
-        uint256 amount = 25 * 1e18;
+        uint256 watchTime = 7 hours;
 
         address[] memory whitelist = new address[](4);
         whitelist[0] = 0x6CA6d1e2D5347Bfab1d91e883F1915560e09129D; // Test address
@@ -21,11 +21,11 @@ contract GenerateInput is Script {
         whitelist[2] = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
         whitelist[3] = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;
 
-        string memory json = createJson(types, amount, whitelist);
+        string memory json = createJson(types, watchTime, whitelist);
         vm.writeFile(FILE_PATH, json);
     }
 
-    function createJson(string[] memory _types, uint256 _amount, address[] memory _whitelist)
+    function createJson(string[] memory _types, uint256 _watchTime, address[] memory _whitelist)
         internal
         pure
         returns (string memory)
@@ -58,7 +58,7 @@ contract GenerateInput is Script {
                 vm.toString(_whitelist[i]),
                 "\",",
                 "\"1\":\"",
-                vm.toString(_amount),
+                vm.toString(_watchTime),
                 "\"}"
             );
 

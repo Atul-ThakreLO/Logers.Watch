@@ -7,11 +7,18 @@
  */
 
 import {Ownable} from "@openzeppelin-contracts/access/Ownable.sol";
-import {IERC20Permit} from "@openzeppelin-contracts/token/ERC20/extensions/IERC20Permit.sol";
+import {
+    IERC20Permit
+} from "@openzeppelin-contracts/token/ERC20/extensions/IERC20Permit.sol";
 import {IERC20} from "@openzeppelin-contracts/interfaces/IERC20.sol";
 import {AccessControl} from "@openzeppelin-contracts/access/AccessControl.sol";
-import {MerkleProof} from "@openzeppelin-contracts/utils/cryptography/MerkleProof.sol";
-import {ReentrancyGuard} from "@openzeppelin-contracts/utils/ReentrancyGuard.sol";
+import {
+    MerkleProof
+} from "@openzeppelin-contracts/utils/cryptography/MerkleProof.sol";
+import {
+    ReentrancyGuard
+} from "@openzeppelin-contracts/utils/ReentrancyGuard.sol";
+
 
 pragma solidity ^0.8.24;
 
@@ -51,7 +58,7 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
     event ChangePlatformFee(uint256 newFee);
 
     constructor(address[] memory supportedTokens) Ownable(msg.sender) {
-        for(uint8 i = 0; i < supportedTokens.length; i++) {
+        for (uint8 i = 0; i < supportedTokens.length; i++) {
             isSupportedTokens[supportedTokens[i]] = true;
         }
     }
@@ -89,7 +96,6 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
         {} catch {
             revert LogersWatch__PermitFailed();
         }
-
         IERC20(token).transferFrom(msg.sender, address(this), value);
         userDepositAmount[msg.sender] += value;
         emit Deposited(msg.sender, value);
@@ -109,7 +115,7 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
         uint256 totalEarnings,
         address token
     ) public nonReentrant onlyRole(CREATOR_CLAIM_ROLE) isTokenSupported(token) {
-        if(MERKLE_ROOT == bytes32(0)) {
+        if (MERKLE_ROOT == bytes32(0)) {
             revert LogersWatch__MerkleRootNotSet();
         }
         if (!isVerifiedCreator[msg.sender]) {
@@ -127,21 +133,17 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
 
         uint256 platformFee = calculateFlatformFee(amountToWithdraw);
         totalPlatformFeePaidByCreator[msg.sender] = platformFee;
-        IERC20(token).transferFrom(
-            address(this),
-            msg.sender,
-            amountToWithdraw - platformFee
-        );
+        IERC20(token).transfer(msg.sender, amountToWithdraw - platformFee);
         emit Claimed(msg.sender, amountToWithdraw - platformFee);
     }
 
     function grantClaimRoleToCreator(address creator) public onlyOwner {
-        grantRole(CREATOR_CLAIM_ROLE, creator);
+        _grantRole(CREATOR_CLAIM_ROLE, creator);
         emit GrantClaimRole(creator);
     }
 
     function revokeCreatorClaimRole(address creator) public onlyOwner {
-        revokeRole(CREATOR_CLAIM_ROLE, creator);
+        _revokeRole(CREATOR_CLAIM_ROLE, creator);
         emit RevokeClaimRole(creator);
     }
 

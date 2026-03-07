@@ -8,6 +8,10 @@ import {
   UpdateCreatorSchema,
   CreatorLoginSchema,
 } from "./model";
+import {
+  getCreatorProof,
+  verifyCreatorProof,
+} from "../../services/merkle.service";
 
 // JWT Payload for creator
 interface CreatorJWTPayload {
@@ -311,6 +315,96 @@ export const creatorController = new Elysia({ prefix: "/creators" })
       detail: {
         summary: "Delete current creator",
         tags: ["Creator"],
+      },
+    },
+  )
+  // Get merkle proof for claiming earnings
+  .get(
+    "/me/claim-proof",
+    async (ctx) => {
+      const { creatorId, set } = ctx as typeof ctx & CreatorAuthContext;
+      if (!creatorId) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+
+      // Get creator's EOA address
+      const creator = await creatorService.getById(creatorId);
+      if (!creator) {
+        set.status = 404;
+        return { error: "Creator not found" };
+      }
+
+      if (!creator.eoaAddress) {
+        set.status = 400;
+        return {
+          error: "EOA address not set. Please set your wallet address first.",
+        };
+      }
+
+      // Get merkle proof
+      const proofData = await getCreatorProof(creator.eoaAddress);
+      if (!proofData) {
+        set.status = 404;
+        return {
+          error: "No proof found. Wait for the next merkle tree update.",
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          proof: proofData.proof,
+          totalEarnings: proofData.totalEarnings,
+          root: proofData.root,
+          creatorAddress: creator.eoaAddress,
+        },
+      };
+    },
+    {
+      detail: {
+        summary: "Get merkle proof for claiming",
+        description: "Get the merkle proof needed to claim earnings on-chain",
+        tags: ["Creator", "Earnings"],
+      },
+    },
+  )
+  // Verify creator's claim proof
+  .get(
+    "/me/verify-proof",
+    async (ctx) => {
+      const { creatorId, set } = ctx as typeof ctx & CreatorAuthContext;
+      if (!creatorId) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+
+      const creator = await creatorService.getById(creatorId);
+      if (!creator) {
+        set.status = 404;
+        return { error: "Creator not found" };
+      }
+
+      if (!creator.eoaAddress) {
+        set.status = 400;
+        return { error: "EOA address not set" };
+      }
+
+      const isValid = await verifyCreatorProof(creator.eoaAddress);
+
+      return {
+        success: true,
+        data: {
+          address: creator.eoaAddress,
+          isValid,
+        },
+      };
+    },
+    {
+      detail: {
+        summary: "Verify claim proof",
+        description: "Verify that the creator's merkle proof is valid",
+        tags: ["Creator", "Earnings"],
       },
     },
   );
