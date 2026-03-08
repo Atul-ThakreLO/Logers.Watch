@@ -39,40 +39,43 @@ const creatorAuthMiddleware = new Elysia({ name: "creator-auth-middleware" })
     }),
   )
   .use(cookie())
-  .derive(async ({ jwt, cookie, request }): Promise<CreatorAuthContext> => {
-    const authHeader = request.headers.get("authorization");
-    let token: string | undefined;
+  .derive(
+    { as: "global" },
+    async ({ jwt, cookie, request }): Promise<CreatorAuthContext> => {
+      const authHeader = request.headers.get("authorization");
+      let token: string | undefined;
 
-    if (authHeader?.startsWith("Bearer ")) {
-      token = authHeader.slice(7);
-    } else {
-      const accessTokenCookie = cookie.creatorAccessToken as
-        | { value?: string }
-        | undefined;
-      if (accessTokenCookie?.value) {
-        token = accessTokenCookie.value;
+      if (authHeader?.startsWith("Bearer ")) {
+        token = authHeader.slice(7);
+      } else {
+        const accessTokenCookie = cookie.creatorAccessToken as
+          | { value?: string }
+          | undefined;
+        if (accessTokenCookie?.value) {
+          token = accessTokenCookie.value;
+        }
       }
-    }
 
-    if (!token) {
-      return { creatorId: null, creatorEmail: null, creatorName: null };
-    }
-
-    try {
-      const payload = (await jwt.verify(token)) as CreatorJWTPayload | false;
-      if (!payload || payload.type !== "creator_access") {
+      if (!token) {
         return { creatorId: null, creatorEmail: null, creatorName: null };
       }
 
-      return {
-        creatorId: payload.sub,
-        creatorEmail: payload.email,
-        creatorName: payload.name,
-      };
-    } catch {
-      return { creatorId: null, creatorEmail: null, creatorName: null };
-    }
-  });
+      try {
+        const payload = (await jwt.verify(token)) as CreatorJWTPayload | false;
+        if (!payload || payload.type !== "creator_access") {
+          return { creatorId: null, creatorEmail: null, creatorName: null };
+        }
+
+        return {
+          creatorId: payload.sub,
+          creatorEmail: payload.email,
+          creatorName: payload.name,
+        };
+      } catch {
+        return { creatorId: null, creatorEmail: null, creatorName: null };
+      }
+    },
+  );
 
 export const creatorController = new Elysia({ prefix: "/creators" })
   .use(
