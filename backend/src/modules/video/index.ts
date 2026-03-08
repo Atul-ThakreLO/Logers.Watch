@@ -3,14 +3,21 @@ import { jwt } from "@elysiajs/jwt";
 import { cookie } from "@elysiajs/cookie";
 import { videoService } from "./service";
 import { JWT_CONFIG } from "../../utils/jwt";
-import { CreateVideoSchema, UpdateVideoSchema } from "./model";
+import {
+  CreateVideoSchema,
+  UpdateVideoSchema,
+  UploadVideoSchema,
+} from "./model";
 import { resolve, join } from "path";
-import { readFile, stat } from "fs/promises";
+import { readFile, stat, mkdir } from "fs/promises";
 import { billingService } from "../billing/service";
 import { sendBalanceUpdate } from "../billing/websocket";
+import { addVideoProcessingJob, getJobStatus } from "../../utils/queue";
 
 // Public folder path for video files
 const PUBLIC_FOLDER = resolve(process.cwd(), "public");
+// Temp folder for uploads
+const TEMP_FOLDER = resolve(process.cwd(), "temp");
 
 // JWT Payload for creator
 interface CreatorJWTPayload {
@@ -256,15 +263,21 @@ export const videoController = new Elysia({ prefix: "/videos" })
         return { error: "Video not found" };
       }
 
+      // Check if video is ready
+      if (video.status !== "READY") {
+        set.status = 400;
+        set.headers["Access-Control-Allow-Origin"] = "http://localhost:3001";
+        set.headers["Access-Control-Allow-Credentials"] = "true";
+        return {
+          error: `Video is not ready for streaming (status: ${video.status})`,
+        };
+      }
+
       // Start or update watch session on manifest request
       await billingService.startSession(userId, params.videoId);
 
       try {
-        const mpdPath = join(
-          PUBLIC_FOLDER,
-          params.videoId,
-          "animal_manifest.mpd",
-        );
+        const mpdPath = join(PUBLIC_FOLDER, params.videoId, "manifest.mpd");
 
         // Check if file exists
         await stat(mpdPath);
@@ -387,6 +400,164 @@ export const videoController = new Elysia({ prefix: "/videos" })
   )
   // Protected routes (creator only)
   .use(creatorAuthMiddleware)
+  // Upload video endpoint - streams file to temp and queues for processing
+  .post(
+    "/upload",
+    async (ctx) => {
+      const { body, creatorId, set } = ctx as typeof ctx &
+        CreatorAuthContext & {
+          body: { video: File; title?: string };
+        };
+
+      if (!creatorId) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+
+      const videoFile = body.video;
+      if (!videoFile || !(videoFile instanceof File)) {
+        set.status = 400;
+        return { error: "No video file provided" };
+      }
+
+      // Validate file type
+      const allowedTypes = [
+        "video/mp4",
+        "video/webm",
+        "video/quicktime",
+        "video/x-msvideo",
+      ];
+      if (!allowedTypes.includes(videoFile.type)) {
+        set.status = 400;
+        return { error: "Invalid file type. Allowed: mp4, webm, mov, avi" };
+      }
+
+      // Max file size: 2GB
+      const maxSize = 2 * 1024 * 1024 * 1024;
+      if (videoFile.size > maxSize) {
+        set.status = 400;
+        return { error: "File too large. Maximum size: 2GB" };
+      }
+
+      try {
+        // Generate videoId
+        const videoId = videoService.generateVideoId();
+
+        // Ensure temp directory exists
+        await mkdir(TEMP_FOLDER, { recursive: true });
+
+        // Save file to temp (Bun streams to disk efficiently)
+        const tempFilePath = join(TEMP_FOLDER, `${videoId}.mp4`);
+        await Bun.write(tempFilePath, videoFile);
+
+        // Create video record in DB with PENDING status
+        const video = await videoService.create({
+          videoId,
+          title: body.title,
+          creatorId,
+        });
+
+        // Output directory for processed video
+        const outputDir = join(PUBLIC_FOLDER, videoId);
+
+        // Queue video for processing
+        await addVideoProcessingJob({
+          videoId,
+          tempFilePath,
+          outputDir,
+          creatorId,
+        });
+
+        set.status = 202; // Accepted
+        return {
+          message: "Video uploaded successfully. Processing started.",
+          video: {
+            id: video.id,
+            videoId: video.videoId,
+            title: video.title,
+            status: video.status,
+          },
+        };
+      } catch (error) {
+        set.status = 500;
+        return {
+          error:
+            error instanceof Error ? error.message : "Failed to upload video",
+        };
+      }
+    },
+    {
+      body: t.Object({
+        video: t.File(),
+        title: t.Optional(t.String({ minLength: 1, maxLength: 200 })),
+      }),
+      detail: {
+        summary: "Upload video for processing (creator only)",
+        description:
+          "Upload a video file. It will be processed in the background and converted to DASH format.",
+        tags: ["Video Upload"],
+      },
+    },
+  )
+  // Get video processing status
+  .get(
+    "/status/:videoId",
+    async (ctx) => {
+      const { params, creatorId, set } = ctx as typeof ctx & CreatorAuthContext;
+
+      if (!creatorId) {
+        set.status = 401;
+        return { error: "Unauthorized" };
+      }
+
+      const video = await videoService.findByVideoId(params.videoId);
+      if (!video) {
+        set.status = 404;
+        return { error: "Video not found" };
+      }
+
+      // Verify ownership
+      if (video.creatorId !== creatorId) {
+        set.status = 403;
+        return { error: "Not authorized to view this video" };
+      }
+
+      // Get job status from queue if processing
+      let jobProgress = null;
+      if (video.status === "PROCESSING") {
+        const job = await getJobStatus(params.videoId);
+        if (job) {
+          jobProgress = {
+            state: job.state,
+            progress: job.progress,
+          };
+        }
+      }
+
+      return {
+        video: {
+          id: video.id,
+          videoId: video.videoId,
+          title: video.title,
+          status: video.status,
+          duration: video.duration,
+          segmentCount: video.segmentCount,
+          errorMessage: video.errorMessage,
+          mpdFileUrl: video.mpdFileUrl,
+        },
+        jobProgress,
+      };
+    },
+    {
+      params: t.Object({
+        videoId: t.String(),
+      }),
+      detail: {
+        summary: "Get video processing status (creator only)",
+        tags: ["Video Upload"],
+      },
+    },
+  )
   .post(
     "/",
     async (ctx) => {
