@@ -33,13 +33,6 @@ export const LOGERS_WATCH_ABI = [
     outputs: [{ name: "", type: "address[]" }],
   },
   {
-    name: "addCreator",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [{ name: "creator", type: "address" }],
-    outputs: [],
-  },
-  {
     name: "getTotalWithdrawnByCreator",
     type: "function",
     stateMutability: "view",
@@ -198,37 +191,5 @@ export async function setMerkleRoot(
   return hash;
 }
 
-/**
- * Add creator to contract
- */
-export async function addCreatorToContract(
-  creator: Address,
-): Promise<`0x${string}`> {
-  const walletClient = createWalletClientInstance();
-  const publicClient = createPublicClientInstance();
-  const contractAddress = getContractAddress();
-
-  // Simulate first
-  await publicClient.simulateContract({
-    address: contractAddress,
-    abi: LOGERS_WATCH_ABI,
-    functionName: "addCreator",
-    args: [creator],
-    account: walletClient.account,
-  });
-
-  // Execute the transaction
-  const hash = await walletClient.writeContract({
-    address: contractAddress,
-    abi: LOGERS_WATCH_ABI,
-    functionName: "addCreator",
-    args: [creator],
-    chain: getChain(),
-    account: walletClient.account!,
-  });
-
-  // Wait for confirmation
-  await publicClient.waitForTransactionReceipt({ hash });
-
-  return hash;
-}
+// NOTE: addCreator, banCreator, changePlatformFee, addNewTokenSupport
+// are managed via bash/makefile using foundry cast commands
