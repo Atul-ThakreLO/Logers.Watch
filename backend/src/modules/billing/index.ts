@@ -1,4 +1,4 @@
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
 import { jwt } from "@elysiajs/jwt";
 import { cookie } from "@elysiajs/cookie";
 import { billingService } from "./service";
@@ -92,76 +92,7 @@ export const billingController = new Elysia({ prefix: "/billing" })
         tags: ["Billing"],
       },
     },
-  )
-  // Force settlement (for testing/admin)
-  .post(
-    "/settle",
-    async (ctx) => {
-      const { userId, set } = ctx as typeof ctx & UserAuthContext;
-
-      if (!userId) {
-        set.status = 401;
-        return { error: "Unauthorized" };
-      }
-
-      const status = await billingService.getBillingStatus(userId);
-      if (!status || !status.activeSession) {
-        set.status = 400;
-        return { error: "No active session to settle" };
-      }
-
-      const result = await billingService.settleToDatabase(
-        userId,
-        status.activeSession.creatorId,
-      );
-
-      return {
-        success: result.success,
-        settlement: result,
-      };
-    },
-    {
-      detail: {
-        summary: "Force settlement to database",
-        tags: ["Billing"],
-      },
-    },
-  )
-  // Recharge balance
-  .post(
-    "/recharge",
-    async (ctx) => {
-      const { body, userId, set } = ctx as typeof ctx & UserAuthContext;
-
-      if (!userId) {
-        set.status = 401;
-        return { error: "Unauthorized" };
-      }
-
-      const result = await billingService.rechargeBalance(
-        userId,
-        body.amount,
-        body.transactionHash,
-      );
-
-      if (!result.success) {
-        set.status = 400;
-        return { error: result.error || "Recharge failed" };
-      }
-
-      return {
-        success: true,
-        newBalance: result.newBalance,
-      };
-    },
-    {
-      body: t.Object({
-        amount: t.Number({ minimum: 0.01 }),
-        transactionHash: t.Optional(t.String()),
-      }),
-      detail: {
-        summary: "Recharge user balance",
-        tags: ["Billing"],
-      },
-    },
   );
+// NOTE: /recharge and /settle routes removed - now handled on-chain via LogersWatch contract
+// Users deposit via smart contract deposit() function
+// Creators claim via smart contract claim() function with merkle proof
