@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { userService } from "@/lib/api/user";
-import { billingService } from "@/lib/api/billing";
 import { User } from "@/lib/api/auth";
 import {
   Loader2,
@@ -13,80 +12,101 @@ import {
   Zap,
   Star,
   Crown,
+  AlertCircle,
+  ShieldCheck,
+  Key,
 } from "lucide-react";
-import {
-  useAccount,
-  useBalance,
-  useSendTransaction,
-  useWaitForTransactionReceipt,
-} from "wagmi";
-import { parseEther } from "viem";
+import { useAccount, useWaitForTransactionReceipt } from "wagmi";
+import useLogersWatch from "@/hooks/useLogersWatch";
+import { type Address } from "viem";
 
 const RECHARGE_AMOUNTS = [
   {
-    value: 5,
-    label: "$5",
+    value: "10",
+    label: "10",
     icon: Zap,
     color: "bg-blue-100 text-blue-600",
     popular: false,
   },
   {
-    value: 10,
-    label: "$10",
+    value: "50",
+    label: "50",
     icon: Star,
     color: "bg-green-100 text-green-600",
     popular: true,
   },
   {
-    value: 25,
-    label: "$25",
+    value: "100",
+    label: "100",
     icon: Crown,
     color: "bg-purple-100 text-purple-600",
     popular: false,
   },
   {
-    value: 50,
-    label: "$50",
+    value: "500",
+    label: "500",
     icon: Crown,
     color: "bg-yellow-100 text-yellow-600",
     popular: false,
   },
 ];
 
+type DepositMethod = "permit" | "approval";
+
 export default function RechargePage() {
   const router = useRouter();
   const { address, isConnected } = useAccount();
-  const { data: walletBalance } = useBalance({ address });
+
+  const {
+    isProcessing,
+    formattedDepositedBalance,
+    formattedTokenBalance,
+    formattedAllowance,
+    tokenSymbol,
+    depositWithPermit,
+    depositWithoutPermit,
+    approveToken,
+    allowance,
+    tokenDecimals,
+  } = useLogersWatch();
 
   const [user, setUser] = useState<User | null>(null);
-  const [selectedAmount, setSelectedAmount] = useState<number>(10);
+  const [selectedAmount, setSelectedAmount] = useState<string>("50");
   const [customAmount, setCustomAmount] = useState<string>("");
   const [useCustom, setUseCustom] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [txHash, setTxHash] = useState<Address | undefined>();
+  const [depositMethod, setDepositMethod] = useState<DepositMethod>("permit");
+  const [needsApproval, setNeedsApproval] = useState(false);
 
-  // Web3 transaction hooks
-  const {
-    data: hash,
-    sendTransaction,
-    isPending: isSending,
-  } = useSendTransaction();
+  // Wait for transaction confirmation
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({
-      hash,
-    });
+    useWaitForTransactionReceipt({ hash: txHash });
 
   useEffect(() => {
     fetchUser();
   }, []);
 
   useEffect(() => {
-    if (isConfirmed && hash) {
-      completeRecharge(hash);
+    if (isConfirmed && txHash) {
+      setSuccess(true);
+      setTimeout(() => {
+        router.push("/profile/balance");
+      }, 2000);
     }
-  }, [isConfirmed, hash]);
+  }, [isConfirmed, txHash, router]);
+
+  // Check if approval is needed for non-permit deposit
+  useEffect(() => {
+    if (depositMethod === "approval" && allowance !== undefined) {
+      const amount = getRechargeAmount();
+      const decimals = tokenDecimals || 18;
+      const requiredAmount = BigInt(Math.floor(parseFloat(amount) * 10 ** decimals));
+      setNeedsApproval((allowance as bigint) < requiredAmount);
+    }
+  }, [depositMethod, allowance, selectedAmount, customAmount, useCustom, tokenDecimals]);
 
   const fetchUser = async () => {
     try {
@@ -101,63 +121,48 @@ export default function RechargePage() {
 
   const getRechargeAmount = () => {
     if (useCustom && customAmount) {
-      return parseFloat(customAmount);
+      return customAmount;
     }
     return selectedAmount;
   };
 
-  const handleRecharge = async () => {
+  const handleApprove = async () => {
+    setError("");
     const amount = getRechargeAmount();
-    if (amount <= 0) {
+
+    const result = await approveToken(amount);
+    if (!result.success) {
+      setError(result.error || "Approval failed");
+    } else {
+      setTxHash(result.hash);
+    }
+  };
+
+  const handleDeposit = async () => {
+    const amount = getRechargeAmount();
+    if (parseFloat(amount) <= 0) {
       setError("Please enter a valid amount");
       return;
     }
 
     setError("");
-    setIsProcessing(true);
 
-    // If wallet is connected, process via blockchain
-    if (isConnected && address) {
-      try {
-        // Convert USD amount to ETH (simplified - in production use price oracle)
-        const ethAmount = amount / 2000; // Assuming 1 ETH = $2000
-
-        sendTransaction({
-          to: "0x0000000000000000000000000000000000000000", // Replace with actual treasury address
-          value: parseEther(ethAmount.toString()),
-        });
-      } catch (err) {
-        setError("Transaction failed. Please try again.");
-        setIsProcessing(false);
-      }
-    } else {
-      // Demo mode - directly update balance
-      try {
-        await billingService.recharge({ amount });
-        setSuccess(true);
-        setTimeout(() => {
-          router.push("/profile/balance");
-        }, 2000);
-      } catch (err: any) {
-        setError(err.response?.data?.error || "Recharge failed");
-      } finally {
-        setIsProcessing(false);
-      }
+    if (!isConnected) {
+      setError("Please connect your wallet first");
+      return;
     }
-  };
 
-  const completeRecharge = async (txHash: string) => {
-    try {
-      const amount = getRechargeAmount();
-      await billingService.recharge({ amount, transactionHash: txHash });
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/profile/balance");
-      }, 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to verify transaction");
-    } finally {
-      setIsProcessing(false);
+    let result;
+    if (depositMethod === "permit") {
+      result = await depositWithPermit(amount);
+    } else {
+      result = await depositWithoutPermit(amount);
+    }
+
+    if (!result.success) {
+      setError(result.error || "Deposit failed");
+    } else {
+      setTxHash(result.hash);
     }
   };
 
@@ -176,10 +181,10 @@ export default function RechargePage() {
           <Check className="w-10 h-10 text-green-600" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Recharge Successful!
+          Deposit Successful!
         </h2>
         <p className="text-gray-600 mb-4">
-          ${getRechargeAmount().toFixed(2)} has been added to your account.
+          {getRechargeAmount()} {tokenSymbol || "tokens"} has been deposited.
         </p>
         <p className="text-sm text-gray-500">Redirecting to balance page...</p>
       </div>
@@ -188,17 +193,33 @@ export default function RechargePage() {
 
   return (
     <div className="space-y-6">
-      {/* Current Balance */}
-      <div className="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-primary/10 border-2 border-primary flex items-center justify-center">
-            <Wallet className="w-6 h-6 text-primary" />
+      {/* Wallet Balances */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-primary/10 border-2 border-primary flex items-center justify-center">
+              <Wallet className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Contract Balance</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formattedDepositedBalance} {tokenSymbol || ""}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Current Balance</p>
-            <p className="text-2xl font-bold text-gray-900">
-              ${user?.balance?.toFixed(2) || "0.00"}
-            </p>
+        </div>
+
+        <div className="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-100 border-2 border-green-600 flex items-center justify-center">
+              <CreditCard className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Wallet Balance</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formattedTokenBalance} {tokenSymbol || ""}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -206,11 +227,12 @@ export default function RechargePage() {
       {/* Amount Selection */}
       <div className="bg-white border-2 border-black p-8 hover:shadow-[4px_4px_0_0_#000] transition-shadow">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">
-          Select Amount
+          Select Amount ({tokenSymbol || "tokens"})
         </h3>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border-2 border-red-500 text-red-600 text-sm">
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-500 text-red-600 text-sm flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 shrink-0" />
             {error}
           </div>
         )}
@@ -252,7 +274,7 @@ export default function RechargePage() {
         </div>
 
         {/* Custom Amount */}
-        <div className="mb-8">
+        <div className="mb-6">
           <label className="flex items-center gap-3 mb-3">
             <input
               type="checkbox"
@@ -264,84 +286,140 @@ export default function RechargePage() {
           </label>
 
           {useCustom && (
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg">
-                $
-              </span>
-              <input
-                type="number"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                placeholder="0.00"
-                min="1"
-                step="0.01"
-                className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary text-lg text-gray-900"
-              />
-            </div>
+            <input
+              type="number"
+              value={customAmount}
+              onChange={(e) => setCustomAmount(e.target.value)}
+              placeholder="0"
+              min="1"
+              step="1"
+              className="w-full px-4 py-3 border-2 border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary text-lg text-gray-900"
+            />
           )}
         </div>
+
+        {/* Deposit Method Selection */}
+        <div className="mb-6">
+          <h4 className="text-sm font-semibold text-gray-700 mb-3">Deposit Method</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => setDepositMethod("permit")}
+              className={`p-4 border-2 transition-all flex items-center gap-3 ${
+                depositMethod === "permit"
+                  ? "border-primary bg-primary/5"
+                  : "border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              <ShieldCheck className={`w-5 h-5 ${depositMethod === "permit" ? "text-primary" : "text-gray-500"}`} />
+              <div className="text-left">
+                <p className="font-medium text-gray-900">Permit (Recommended)</p>
+                <p className="text-xs text-gray-500">Gasless approval via signature</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setDepositMethod("approval")}
+              className={`p-4 border-2 transition-all flex items-center gap-3 ${
+                depositMethod === "approval"
+                  ? "border-primary bg-primary/5"
+                  : "border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              <Key className={`w-5 h-5 ${depositMethod === "approval" ? "text-primary" : "text-gray-500"}`} />
+              <div className="text-left">
+                <p className="font-medium text-gray-900">Approve + Deposit</p>
+                <p className="text-xs text-gray-500">Two transactions required</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Approval Info for non-permit method */}
+        {depositMethod === "approval" && (
+          <div className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-500">
+            <p className="text-sm text-yellow-700">
+              <span className="font-semibold">Current Allowance:</span>{" "}
+              {formattedAllowance} {tokenSymbol || ""}
+            </p>
+            {needsApproval && (
+              <p className="text-sm text-yellow-600 mt-1">
+                You need to approve before depositing this amount.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Wallet Info */}
         {isConnected && (
           <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-500">
             <p className="text-sm text-blue-700">
-              <span className="font-semibold">Connected Wallet:</span>{" "}
+              <span className="font-semibold">Connected:</span>{" "}
               {address?.slice(0, 6)}...{address?.slice(-4)}
             </p>
-            {walletBalance && (
-              <p className="text-sm text-blue-600 mt-1">
-                Balance:{" "}
-                {(
-                  Number(walletBalance.value) /
-                  Math.pow(10, walletBalance.decimals)
-                ).toFixed(4)}{" "}
-                {walletBalance.symbol}
-              </p>
-            )}
           </div>
         )}
 
         {/* Summary */}
         <div className="p-4 bg-gray-50 border-2 border-gray-300 mb-6">
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">Amount to Add</span>
+            <span className="text-gray-600">Amount to Deposit</span>
             <span className="text-2xl font-bold text-gray-900">
-              ${getRechargeAmount().toFixed(2)}
-            </span>
-          </div>
-          <div className="flex justify-between items-center mt-2 pt-2 border-t-2 border-gray-300">
-            <span className="text-gray-600">New Balance</span>
-            <span className="text-lg font-semibold text-green-600">
-              ${((user?.balance || 0) + getRechargeAmount()).toFixed(2)}
+              {getRechargeAmount()} {tokenSymbol || ""}
             </span>
           </div>
         </div>
 
-        {/* Recharge Button */}
-        <button
-          onClick={handleRecharge}
-          disabled={isProcessing || isSending || isConfirming}
-          className="w-full bg-primary text-white py-4 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {isProcessing || isSending || isConfirming ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              {isSending && "Sending transaction..."}
-              {isConfirming && "Confirming..."}
-              {isProcessing && !isSending && !isConfirming && "Processing..."}
-            </>
-          ) : (
-            <>
+        {/* Action Buttons */}
+        {!isConnected ? (
+          <div className="text-center p-8 border-2 border-dashed border-gray-300">
+            <Wallet className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 mb-4">Connect your wallet to deposit</p>
+          </div>
+        ) : depositMethod === "approval" && needsApproval ? (
+          <div className="space-y-4">
+            <button
+              onClick={handleApprove}
+              disabled={isProcessing || isConfirming}
+              className="w-full bg-yellow-500 text-white py-4 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isProcessing || isConfirming ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  {isConfirming ? "Confirming..." : "Processing..."}
+                </>
+              ) : (
+                <>
+                  <Key className="h-5 w-5" />
+                  Step 1: Approve {getRechargeAmount()} {tokenSymbol || ""}
+                </>
+              )}
+            </button>
+            <button
+              disabled
+              className="w-full bg-gray-300 text-gray-500 py-4 border-2 border-gray-400 font-semibold cursor-not-allowed flex items-center justify-center gap-2"
+            >
               <CreditCard className="h-5 w-5" />
-              {isConnected ? "Pay with Wallet" : "Recharge Now"}
-            </>
-          )}
-        </button>
-
-        {!isConnected && (
-          <p className="text-center text-sm text-gray-500 mt-4">
-            Connect your wallet for blockchain payments or use demo mode
-          </p>
+              Step 2: Deposit (approve first)
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleDeposit}
+            disabled={isProcessing || isConfirming}
+            className="w-full bg-primary text-white py-4 border-2 border-black font-semibold hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isProcessing || isConfirming ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                {isConfirming ? "Confirming..." : "Processing..."}
+              </>
+            ) : (
+              <>
+                <CreditCard className="h-5 w-5" />
+                Deposit {getRechargeAmount()} {tokenSymbol || ""}
+              </>
+            )}
+          </button>
         )}
       </div>
     </div>

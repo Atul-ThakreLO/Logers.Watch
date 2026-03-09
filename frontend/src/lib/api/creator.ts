@@ -142,6 +142,31 @@ export const creatorService = {
     );
     return response.data;
   },
+
+  // Merkle claim endpoints
+  async getClaimProof(): Promise<{
+    success: boolean;
+    data: {
+      proof: string[];
+      totalEarnings: string;
+      root: string;
+      creatorAddress: string;
+    };
+  }> {
+    const response = await creatorApiClient.get("/creators/me/claim-proof");
+    return response.data;
+  },
+
+  async verifyClaimProof(): Promise<{
+    success: boolean;
+    data: {
+      address: string;
+      isValid: boolean;
+    };
+  }> {
+    const response = await creatorApiClient.get("/creators/me/verify-proof");
+    return response.data;
+  },
 };
 
 export default creatorService;
