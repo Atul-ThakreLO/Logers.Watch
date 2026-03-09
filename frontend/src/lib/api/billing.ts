@@ -2,34 +2,23 @@ import apiClient from "./client";
 
 export interface BillingStatus {
   userId: string;
-  currentBalance: number;
-  pendingDeductions: number;
-  availableBalance: number;
+  dbBalance: number;
+  pendingDeduction: number;
+  effectiveBalance: number;
   activeSession: {
+    userId: string;
+    videoId: string;
     creatorId: string;
     startTime: number;
-    currentWatchTime: number;
-    pendingAmount: number;
+    lastSettlementTime: number;
+    totalRequests: number;
   } | null;
 }
 
-export interface RechargeData {
-  amount: number;
-  transactionHash?: string;
-}
-
-export interface SettlementResult {
-  success: boolean;
-  userId: string;
-  creatorId: string;
-  watchTimeSeconds: number;
-  amountDeducted: number;
-  newUserBalance: number;
-  creatorEarnings: number;
-  timestamp: string;
-}
-
 export const billingService = {
+  /**
+   * Get current billing status including balance and active session
+   */
   async getStatus(): Promise<{ status: BillingStatus }> {
     const response = await apiClient.get<{ status: BillingStatus }>(
       "/billing/status",
@@ -37,30 +26,8 @@ export const billingService = {
     return response.data;
   },
 
-  async settle(): Promise<{ success: boolean; settlement: SettlementResult }> {
-    const response = await apiClient.post<{
-      success: boolean;
-      settlement: SettlementResult;
-    }>("/billing/settle");
-    return response.data;
-  },
-
-  async recharge(
-    data: RechargeData,
-  ): Promise<{ success: boolean; newBalance: number }> {
-    const response = await apiClient.post<{
-      success: boolean;
-      newBalance: number;
-    }>("/billing/recharge", data);
-    return response.data;
-  },
-
-  async getHistory(): Promise<{ transactions: any[] }> {
-    const response = await apiClient.get<{ transactions: any[] }>(
-      "/billing/history",
-    );
-    return response.data;
-  },
+  // NOTE: recharge() removed - now handled on-chain via LogersWatch.deposit()
+  // NOTE: settle() removed - now handled on-chain via LogersWatch.claim()
 };
 
 export default billingService;
