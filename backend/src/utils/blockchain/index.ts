@@ -13,8 +13,12 @@ import {
   type PublicClient,
   type WalletClient,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import { sepolia, mainnet, localhost } from "viem/chains";
+import { Wallet } from "@ethereumjs/wallet";
+import { readFileSync } from "fs";
+import { resolve } from "path";
+import { homedir } from "os";
 
 // LogersWatch Contract ABI (only the functions we need)
 export const LOGERS_WATCH_ABI = [
@@ -89,14 +93,36 @@ export function createPublicClientInstance(): PublicClient {
   });
 }
 
-// Create wallet client for write operations
-export function createWalletClientInstance(): WalletClient {
-  const privateKey = process.env.ADMIN_PRIVATE_KEY;
-  if (!privateKey) {
-    throw new Error("ADMIN_PRIVATE_KEY environment variable not set");
+/**
+ * Load account from Foundry keystore file
+ * Keystore path: ~/.foundry/keystores/<name>
+ */
+async function loadAccountFromKeystore(): Promise<PrivateKeyAccount> {
+  const keystoreName = process.env.ADMIN_KEYSTORE_NAME;
+  const password = process.env.ADMIN_KEYSTORE_PASSWORD;
+
+  if (!keystoreName) {
+    throw new Error("ADMIN_KEYSTORE_NAME environment variable not set");
+  }
+  if (!password) {
+    throw new Error("ADMIN_KEYSTORE_PASSWORD environment variable not set");
   }
 
-  const account = privateKeyToAccount(privateKey as `0x${string}`);
+  const fullPath = resolve(homedir(), ".foundry", "keystores", keystoreName);
+  const keystoreJson = readFileSync(fullPath, "utf-8");
+  const keystore = JSON.parse(keystoreJson);
+
+  // Decrypt the keystore
+  const wallet = await Wallet.fromV3(keystore, password);
+  const privateKey =
+    `0x${wallet.getPrivateKeyString().replace("0x", "")}` as `0x${string}`;
+
+  return privateKeyToAccount(privateKey);
+}
+
+// Create wallet client for write operations (uses keystore)
+export async function createWalletClientInstance(): Promise<WalletClient> {
+  const account = await loadAccountFromKeystore();
 
   return createWalletClient({
     account,
@@ -162,7 +188,7 @@ export async function getPlatformFee(): Promise<bigint> {
 export async function setMerkleRoot(
   root: `0x${string}`,
 ): Promise<`0x${string}`> {
-  const walletClient = createWalletClientInstance();
+  const walletClient = await createWalletClientInstance();
   const publicClient = createPublicClientInstance();
   const contractAddress = getContractAddress();
 
