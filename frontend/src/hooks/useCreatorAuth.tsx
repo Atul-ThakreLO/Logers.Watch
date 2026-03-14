@@ -9,6 +9,7 @@ import React, {
   ReactNode,
 } from "react";
 import { creatorAuthService, creatorService, Creator } from "@/lib/api";
+import { AUTH_STATE_EVENT } from "@/lib/auth/events";
 
 interface CreatorAuthContextType {
   creator: Creator | null;
@@ -59,6 +60,34 @@ export function CreatorAuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkAuth();
+
+    const handleAuthChange = async () => {
+      const storedToken = localStorage.getItem("creatorAccessToken");
+      const userType = localStorage.getItem("userType");
+
+      if (!storedToken || userType !== "creator") {
+        setCreator(null);
+        setAccessToken(null);
+        return;
+      }
+
+      setAccessToken(storedToken);
+
+      try {
+        const { creator } = await creatorService.getProfile();
+        setCreator(creator);
+      } catch {
+        setCreator(null);
+      }
+    };
+
+    window.addEventListener(AUTH_STATE_EVENT, handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
+
+    return () => {
+      window.removeEventListener(AUTH_STATE_EVENT, handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

@@ -42,7 +42,7 @@ export default function CreatorDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <Loader2 className="h-8 w-8 animate-spin text-secondary" />
       </div>
     );
@@ -76,10 +76,10 @@ export default function CreatorDashboardPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-white">
             Welcome back, {creator?.name}!
           </h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-3xl font-extrabold text-gray-400 mt-1">
             {creator?.company || "Independent Creator"}
           </p>
         </div>
@@ -144,9 +144,10 @@ export default function CreatorDashboardPage() {
               <p className="text-2xl font-bold text-white">
                 $
                 {videos.length > 0
-                  ? ((creator?.amountEarned || 0) / videos.length).toFixed(2)
+                  ? ((creator?.amountEarned || 0) / videos.length).toFixed(3)
                   : "0.00"}
               </p>
+              <p className="text-sm text-gray-400">Out of Amount Earned</p>
             </div>
           </div>
         </div>
@@ -193,7 +194,7 @@ export default function CreatorDashboardPage() {
                     <VideoIcon className="w-6 h-6 text-gray-500" />
                   </div>
                   <div>
-                    <p className="font-medium text-white">{video.videoId}</p>
+                    <p className="font-medium text-white">{video.title || video.videoId}</p>
                     <p className="text-sm text-gray-400 flex items-center gap-2 mt-1">
                       <Calendar className="h-3 w-3" />
                       {new Date(video.createdAt).toLocaleDateString()}

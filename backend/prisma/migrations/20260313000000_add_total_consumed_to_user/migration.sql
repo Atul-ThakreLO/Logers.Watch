@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User"
+ADD COLUMN "totalConsumed" DOUBLE PRECISION NOT NULL DEFAULT 0;

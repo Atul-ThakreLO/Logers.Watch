@@ -1,6 +1,8 @@
 import { redis, cache, CacheKeys, prisma } from "../../utils/db";
+import { Prisma } from "../../generated/prisma/client";
 import { videoService } from "../video/service";
 import {
+  COST_PER_SECOND,
   COST_PER_REQUEST,
   SESSION_TTL_SECONDS,
   type WatchSession,
@@ -8,20 +10,30 @@ import {
   type BillingStatus,
 } from "./model";
 
+function getAvailableBalance(balance: number, totalConsumed: number): number {
+  return Math.max(balance - totalConsumed, 0);
+}
+
 export class BillingService {
-  /**
-   * Deduct balance for a streaming request (atomic Redis operation)
-   * Returns false if user has insufficient balance
-   */
-  async deductForRequest(userId: string): Promise<{
+  private async deductAmount(
+    userId: string,
+    amount: number,
+  ): Promise<{
     success: boolean;
     newPendingDeduction: number;
     error?: string;
   }> {
+    const safeAmount = Number.isFinite(amount) ? Math.max(amount, 0) : 0;
+    if (safeAmount === 0) {
+      const pendingKey = CacheKeys.userPendingDeduction(userId);
+      const pending = parseFloat((await redis.get(pendingKey)) || "0");
+      return { success: true, newPendingDeduction: pending };
+    }
+
     const pendingKey = CacheKeys.userPendingDeduction(userId);
 
     // Atomically increment pending deduction
-    const newPendingStr = await redis.incrbyfloat(pendingKey, COST_PER_REQUEST);
+    const newPendingStr = await redis.incrbyfloat(pendingKey, safeAmount);
     const newPending = parseFloat(newPendingStr);
 
     // Set TTL if this is a new key
@@ -33,31 +45,62 @@ export class BillingService {
     // Check if user still has sufficient balance
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { balance: true },
+      select: { balance: true, totalConsumed: true },
     });
 
     if (!user) {
       // Revert the deduction
-      await redis.incrbyfloat(pendingKey, -COST_PER_REQUEST);
+      await redis.incrbyfloat(pendingKey, -safeAmount);
       return {
         success: false,
-        newPendingDeduction: newPending - COST_PER_REQUEST,
+        newPendingDeduction: newPending - safeAmount,
         error: "User not found",
       };
     }
 
-    const effectiveBalance = user.balance - newPending;
+    const effectiveBalance =
+      getAvailableBalance(user.balance, user.totalConsumed) - newPending;
     if (effectiveBalance < 0) {
       // Revert the deduction
-      await redis.incrbyfloat(pendingKey, -COST_PER_REQUEST);
+      await redis.incrbyfloat(pendingKey, -safeAmount);
       return {
         success: false,
-        newPendingDeduction: newPending - COST_PER_REQUEST,
+        newPendingDeduction: newPending - safeAmount,
         error: "Insufficient balance",
       };
     }
 
     return { success: true, newPendingDeduction: newPending };
+  }
+
+  /**
+   * Deduct balance for a streaming request (atomic Redis operation)
+   * Returns false if user has insufficient balance
+   */
+  async deductForRequest(userId: string): Promise<{
+    success: boolean;
+    newPendingDeduction: number;
+    error?: string;
+  }> {
+    return this.deductAmount(userId, COST_PER_REQUEST);
+  }
+
+  /**
+   * Deduct balance based on actual segment playback duration.
+   */
+  async deductForDuration(
+    userId: string,
+    durationSeconds: number,
+  ): Promise<{
+    success: boolean;
+    newPendingDeduction: number;
+    error?: string;
+  }> {
+    const safeSeconds = Number.isFinite(durationSeconds)
+      ? Math.max(durationSeconds, 0)
+      : 0;
+    const amount = safeSeconds * COST_PER_SECOND;
+    return this.deductAmount(userId, amount);
   }
 
   /**
@@ -129,15 +172,6 @@ export class BillingService {
       return null;
     }
 
-    // Calculate final watch time for this session
-    const now = Date.now();
-    const watchTimeSeconds = (now - session.lastSettlementTime) / 1000;
-
-    // Add watch time to creator
-    if (watchTimeSeconds > 0) {
-      await this.addCreatorWatchTime(session.creatorId, watchTimeSeconds);
-    }
-
     // Settle to database
     const result = await this.settleToDatabase(userId, session.creatorId);
 
@@ -176,12 +210,12 @@ export class BillingService {
       }
 
       // Use transaction to update database
-      await prisma.$transaction(async (tx) => {
-        // Deduct from user balance
+      await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        // Persist streaming spend without overwriting deposited balance.
         if (pendingDeduction > 0) {
           await tx.user.update({
             where: { id: userId },
-            data: { balance: { decrement: pendingDeduction } },
+            data: { totalConsumed: { increment: pendingDeduction } },
           });
         }
 
@@ -240,7 +274,7 @@ export class BillingService {
   async getBillingStatus(userId: string): Promise<BillingStatus | null> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { balance: true },
+      select: { balance: true, totalConsumed: true },
     });
 
     if (!user) {
@@ -252,13 +286,14 @@ export class BillingService {
 
     const pendingDeduction = parseFloat((await redis.get(pendingKey)) || "0");
     const session = await cache.get<WatchSession>(sessionKey);
+    const dbBalance = getAvailableBalance(user.balance, user.totalConsumed);
 
     return {
       userId,
       pendingDeduction,
       activeSession: session,
-      dbBalance: user.balance,
-      effectiveBalance: user.balance - pendingDeduction,
+      dbBalance,
+      effectiveBalance: Math.max(dbBalance - pendingDeduction, 0),
     };
   }
 }

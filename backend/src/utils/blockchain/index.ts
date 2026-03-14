@@ -7,6 +7,7 @@
 import {
   createPublicClient,
   createWalletClient,
+  fallback,
   http,
   type Address,
   type Chain,
@@ -50,6 +51,31 @@ export const LOGERS_WATCH_ABI = [
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
   },
+  {
+    name: "getTotaldepositedByUser",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
+
+// ERC20 ABI for token decimals
+export const ERC20_ABI = [
+  {
+    name: "decimals",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint8" }],
+  },
+  {
+    name: "symbol",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "string" }],
+  },
 ] as const;
 
 // Chain configuration
@@ -58,6 +84,26 @@ const CHAIN_MAP: Record<string, Chain> = {
   mainnet,
   localhost,
 };
+
+const DEFAULT_RPC_URL = "http://127.0.0.1:8545";
+
+function parsePositiveIntegerEnv(name: string, fallbackValue: number): number {
+  const raw = process.env[name]?.trim();
+  if (!raw) return fallbackValue;
+
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallbackValue;
+
+  return parsed;
+}
+
+const RPC_TIMEOUT_MS = parsePositiveIntegerEnv("RPC_TIMEOUT_MS", 15_000);
+const RPC_RETRY_COUNT = parsePositiveIntegerEnv("RPC_RETRY_COUNT", 2);
+const RPC_RETRY_DELAY_MS = parsePositiveIntegerEnv("RPC_RETRY_DELAY_MS", 300);
+const MERKLE_SIMULATION_RETRIES = parsePositiveIntegerEnv(
+  "MERKLE_SIMULATION_RETRIES",
+  3,
+);
 
 // Get chain from environment
 function getChain(): Chain {
@@ -69,9 +115,37 @@ function getChain(): Chain {
   return chain;
 }
 
-// Get RPC URL
-function getRpcUrl(): string {
-  return process.env.RPC_URL || "http://127.0.0.1:8545";
+// Get validated RPC URLs (primary + optional fallback)
+function getRpcUrls(): string[] {
+  const candidates = [process.env.RPC_URL, process.env.RPC_FALLBACK_URL]
+    .map((url) => url?.trim())
+    .filter((url): url is string => Boolean(url));
+
+  const urls = candidates.length > 0 ? candidates : [DEFAULT_RPC_URL];
+
+  for (const url of urls) {
+    try {
+      // Throws for malformed URLs and gives quick feedback at startup/use-time.
+      new URL(url);
+    } catch {
+      throw new Error(`Invalid RPC URL: '${url}'`);
+    }
+  }
+
+  return urls;
+}
+
+function createRpcTransport() {
+  const urls = getRpcUrls();
+  const transports = urls.map((url) =>
+    http(url, {
+      timeout: RPC_TIMEOUT_MS,
+      retryCount: RPC_RETRY_COUNT,
+      retryDelay: RPC_RETRY_DELAY_MS,
+    }),
+  );
+
+  return transports.length === 1 ? transports[0] : fallback(transports);
 }
 
 // Get contract address
@@ -85,11 +159,20 @@ function getContractAddress(): Address {
   return address as Address;
 }
 
+// Get supported token address
+function getTokenAddress(): Address {
+  const address = process.env.SUPPORTED_TOKEN_ADDRESS;
+  if (!address) {
+    throw new Error("SUPPORTED_TOKEN_ADDRESS environment variable not set");
+  }
+  return address as Address;
+}
+
 // Create public client for read operations
 export function createPublicClientInstance(): PublicClient {
   return createPublicClient({
     chain: getChain(),
-    transport: http(getRpcUrl()),
+    transport: createRpcTransport(),
   });
 }
 
@@ -127,8 +210,23 @@ export async function createWalletClientInstance(): Promise<WalletClient> {
   return createWalletClient({
     account,
     chain: getChain(),
-    transport: http(getRpcUrl()),
+    transport: createRpcTransport(),
   });
+}
+
+function isHttpRequestFailure(error: unknown): boolean {
+  const text = error instanceof Error ? error.message : String(error);
+  return (
+    text.includes("HTTP request failed") ||
+    text.includes("fetch failed") ||
+    text.includes("Failed to fetch") ||
+    text.includes("ETIMEDOUT") ||
+    text.includes("ECONNREFUSED")
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -183,6 +281,23 @@ export async function getPlatformFee(): Promise<bigint> {
 }
 
 /**
+ * Get total deposited amount by user from contract
+ */
+export async function getTotalDepositedByUser(user: Address): Promise<bigint> {
+  const client = createPublicClientInstance();
+  const contractAddress = getContractAddress();
+
+  const deposited = await client.readContract({
+    address: contractAddress,
+    abi: LOGERS_WATCH_ABI,
+    functionName: "getTotaldepositedByUser",
+    args: [user],
+  });
+
+  return deposited as bigint;
+}
+
+/**
  * Set merkle root on the contract
  */
 export async function setMerkleRoot(
@@ -191,15 +306,35 @@ export async function setMerkleRoot(
   const walletClient = await createWalletClientInstance();
   const publicClient = createPublicClientInstance();
   const contractAddress = getContractAddress();
+  const rpcUrls = getRpcUrls();
 
-  // Simulate first to check for errors
-  await publicClient.simulateContract({
-    address: contractAddress,
-    abi: LOGERS_WATCH_ABI,
-    functionName: "setMerkleRoot",
-    args: [root],
-    account: walletClient.account,
-  });
+  // Simulate first to check for errors and retry for transient RPC failures.
+  for (let attempt = 1; attempt <= MERKLE_SIMULATION_RETRIES; attempt++) {
+    try {
+      await publicClient.simulateContract({
+        address: contractAddress,
+        abi: LOGERS_WATCH_ABI,
+        functionName: "setMerkleRoot",
+        args: [root],
+        account: walletClient.account,
+      });
+      break;
+    } catch (error) {
+      const isLastAttempt = attempt === MERKLE_SIMULATION_RETRIES;
+      if (!isHttpRequestFailure(error) || isLastAttempt) {
+        const details =
+          error instanceof Error ? error.message : "Unknown error";
+        throw new Error(
+          `setMerkleRoot simulation failed against RPC ${rpcUrls.join(", ")}. ${details}`,
+        );
+      }
+
+      console.warn(
+        `[Blockchain] setMerkleRoot simulation attempt ${attempt}/${MERKLE_SIMULATION_RETRIES} failed. Retrying...`,
+      );
+      await sleep(250 * attempt);
+    }
+  }
 
   // Execute the transaction
   const hash = await walletClient.writeContract({
@@ -215,6 +350,29 @@ export async function setMerkleRoot(
   await publicClient.waitForTransactionReceipt({ hash });
 
   return hash;
+}
+
+/**
+ * Get token decimals from ERC20 contract
+ * USDC has 6 decimals, most other tokens have 18
+ */
+export async function getTokenDecimals(): Promise<number> {
+  const client = createPublicClientInstance();
+  const tokenAddress = getTokenAddress();
+
+  try {
+    const decimals = await client.readContract({
+      address: tokenAddress,
+      abi: ERC20_ABI,
+      functionName: "decimals",
+    });
+
+    return Number(decimals);
+  } catch (error) {
+    // Default to 6 decimals (USDC standard)
+    console.warn("Failed to get token decimals, defaulting to 6:", error);
+    return 6;
+  }
 }
 
 // NOTE: addCreator, banCreator, changePlatformFee, addNewTokenSupport

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { userService } from "@/lib/api/user";
+import { billingService } from "@/lib/api/billing";
 import { User } from "@/lib/api/auth";
 import {
   Loader2,
@@ -28,6 +29,13 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
+      // Best-effort sync so profile balance and last recharge reflect latest on-chain deposit.
+      try {
+        await billingService.syncBalance();
+      } catch {
+        // Ignore when wallet is not linked or no new deposit exists.
+      }
+
       const { user } = await userService.getProfile();
       setUser(user);
       setEditName(user.name);
@@ -62,7 +70,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="bg-white border-2 border-black p-8 flex items-center justify-center min-h-[400px]">
+      <div className="bg-white border-2 border-black p-8 flex items-center justify-center min-h-100">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );

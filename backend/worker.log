@@ -1,0 +1,4 @@
+nohup: ignoring input
+[Worker] Video processing worker started
+[Worker] Concurrency: 2
+[Worker] Connected to Redis: localhost:6379

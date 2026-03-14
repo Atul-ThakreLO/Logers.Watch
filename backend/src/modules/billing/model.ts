@@ -2,6 +2,8 @@ import { t } from "elysia";
 
 // Constants
 export const COST_PER_REQUEST = 0.0002; // $0.0002 per request
+export const BILLING_BASE_SEGMENT_SECONDS = 4;
+export const COST_PER_SECOND = COST_PER_REQUEST / BILLING_BASE_SEGMENT_SECONDS;
 export const SETTLEMENT_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 export const SESSION_TTL_SECONDS = 24 * 60 * 60; // 24 hours TTL for Redis keys
 

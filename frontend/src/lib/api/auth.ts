@@ -1,4 +1,5 @@
 import apiClient from "./client";
+import { emitAuthStateChanged } from "@/lib/auth/events";
 
 export interface User {
   id: string;
@@ -66,9 +67,11 @@ export const userAuthService = {
     if (response.data.accessToken) {
       localStorage.setItem("accessToken", response.data.accessToken);
       localStorage.setItem("userType", "user");
+      emitAuthStateChanged();
     }
     if (response.data.refreshToken) {
       localStorage.setItem("refreshToken", response.data.refreshToken);
+      emitAuthStateChanged();
     }
 
     return response.data;
@@ -91,6 +94,7 @@ export const userAuthService = {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
       localStorage.removeItem("userType");
+      emitAuthStateChanged();
     }
   },
 
@@ -101,15 +105,16 @@ export const userAuthService = {
 
     if (response.data.accessToken) {
       localStorage.setItem("accessToken", response.data.accessToken);
+      emitAuthStateChanged();
     }
     if (response.data.refreshToken) {
       localStorage.setItem("refreshToken", response.data.refreshToken);
+      emitAuthStateChanged();
     }
 
     return response.data;
   },
 };
-
 
 export const creatorAuthService = {
   async login(credentials: LoginCredentials): Promise<CreatorAuthResponse> {
@@ -121,9 +126,11 @@ export const creatorAuthService = {
     if (response.data.accessToken) {
       localStorage.setItem("creatorAccessToken", response.data.accessToken);
       localStorage.setItem("userType", "creator");
+      emitAuthStateChanged();
     }
     if (response.data.refreshToken) {
       localStorage.setItem("creatorRefreshToken", response.data.refreshToken);
+      emitAuthStateChanged();
     }
 
     return response.data;
@@ -146,7 +153,29 @@ export const creatorAuthService = {
       localStorage.removeItem("creatorAccessToken");
       localStorage.removeItem("creatorRefreshToken");
       localStorage.removeItem("userType");
+      emitAuthStateChanged();
     }
+  },
+
+  async refreshToken(refreshToken: string): Promise<CreatorAuthResponse> {
+    const response = await apiClient.post<CreatorAuthResponse>(
+      "/creators/refresh",
+      {
+        refreshToken,
+      },
+    );
+
+    if (response.data.accessToken) {
+      localStorage.setItem("creatorAccessToken", response.data.accessToken);
+      localStorage.setItem("userType", "creator");
+      emitAuthStateChanged();
+    }
+    if (response.data.refreshToken) {
+      localStorage.setItem("creatorRefreshToken", response.data.refreshToken);
+      emitAuthStateChanged();
+    }
+
+    return response.data;
   },
 };
 

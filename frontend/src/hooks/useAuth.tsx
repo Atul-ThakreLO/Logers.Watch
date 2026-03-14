@@ -9,6 +9,7 @@ import React, {
   ReactNode,
 } from "react";
 import { userAuthService, userService, User } from "@/lib/api";
+import { AUTH_STATE_EVENT } from "@/lib/auth/events";
 
 interface AuthContextType {
   user: User | null;
@@ -58,6 +59,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkAuth();
+
+    const handleAuthChange = async () => {
+      const storedToken = localStorage.getItem("accessToken");
+      const userType = localStorage.getItem("userType");
+
+      if (!storedToken || userType !== "user") {
+        setUser(null);
+        setAccessToken(null);
+        return;
+      }
+
+      setAccessToken(storedToken);
+
+      try {
+        const { user } = await userService.getProfile();
+        setUser(user);
+      } catch {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener(AUTH_STATE_EVENT, handleAuthChange);
+    window.addEventListener("storage", handleAuthChange);
+
+    return () => {
+      window.removeEventListener(AUTH_STATE_EVENT, handleAuthChange);
+      window.removeEventListener("storage", handleAuthChange);
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

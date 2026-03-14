@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { userService } from "@/lib/api/user";
+import { billingService } from "@/lib/api/billing";
 import { User } from "@/lib/api/auth";
 import {
   Loader2,
@@ -89,13 +90,37 @@ export default function RechargePage() {
     fetchUser();
   }, []);
 
+  // Set wallet address when connected
   useEffect(() => {
-    if (isConfirmed && txHash) {
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/profile/balance");
-      }, 2000);
-    }
+    const linkWallet = async () => {
+      if (isConnected && address) {
+        try {
+          await billingService.setWalletAddress(address);
+        } catch (err) {
+          // Ignore error - wallet might already be linked
+          console.debug("Wallet link:", err);
+        }
+      }
+    };
+    linkWallet();
+  }, [isConnected, address]);
+
+  useEffect(() => {
+    const handleConfirmation = async () => {
+      if (isConfirmed && txHash) {
+        // Sync on-chain balance to DB
+        try {
+          await billingService.syncBalance();
+        } catch (err) {
+          console.error("Failed to sync balance:", err);
+        }
+        setSuccess(true);
+        setTimeout(() => {
+          router.push("/profile/balance");
+        }, 2000);
+      }
+    };
+    handleConfirmation();
   }, [isConfirmed, txHash, router]);
 
   // Check if approval is needed for non-permit deposit
@@ -103,10 +128,19 @@ export default function RechargePage() {
     if (depositMethod === "approval" && allowance !== undefined) {
       const amount = getRechargeAmount();
       const decimals = tokenDecimals || 18;
-      const requiredAmount = BigInt(Math.floor(parseFloat(amount) * 10 ** decimals));
+      const requiredAmount = BigInt(
+        Math.floor(parseFloat(amount) * 10 ** decimals),
+      );
       setNeedsApproval((allowance as bigint) < requiredAmount);
     }
-  }, [depositMethod, allowance, selectedAmount, customAmount, useCustom, tokenDecimals]);
+  }, [
+    depositMethod,
+    allowance,
+    selectedAmount,
+    customAmount,
+    useCustom,
+    tokenDecimals,
+  ]);
 
   const fetchUser = async () => {
     try {
@@ -300,7 +334,9 @@ export default function RechargePage() {
 
         {/* Deposit Method Selection */}
         <div className="mb-6">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3">Deposit Method</h4>
+          <h4 className="text-sm font-semibold text-gray-700 mb-3">
+            Deposit Method
+          </h4>
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => setDepositMethod("permit")}
@@ -310,10 +346,16 @@ export default function RechargePage() {
                   : "border-gray-300 hover:border-gray-400"
               }`}
             >
-              <ShieldCheck className={`w-5 h-5 ${depositMethod === "permit" ? "text-primary" : "text-gray-500"}`} />
+              <ShieldCheck
+                className={`w-5 h-5 ${depositMethod === "permit" ? "text-primary" : "text-gray-500"}`}
+              />
               <div className="text-left">
-                <p className="font-medium text-gray-900">Permit (Recommended)</p>
-                <p className="text-xs text-gray-500">Gasless approval via signature</p>
+                <p className="font-medium text-gray-900">
+                  Permit (Recommended)
+                </p>
+                <p className="text-xs text-gray-500">
+                  Gasless approval via signature
+                </p>
               </div>
             </button>
 
@@ -325,10 +367,14 @@ export default function RechargePage() {
                   : "border-gray-300 hover:border-gray-400"
               }`}
             >
-              <Key className={`w-5 h-5 ${depositMethod === "approval" ? "text-primary" : "text-gray-500"}`} />
+              <Key
+                className={`w-5 h-5 ${depositMethod === "approval" ? "text-primary" : "text-gray-500"}`}
+              />
               <div className="text-left">
                 <p className="font-medium text-gray-900">Approve + Deposit</p>
-                <p className="text-xs text-gray-500">Two transactions required</p>
+                <p className="text-xs text-gray-500">
+                  Two transactions required
+                </p>
               </div>
             </button>
           </div>

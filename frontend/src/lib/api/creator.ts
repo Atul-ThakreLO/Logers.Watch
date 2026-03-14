@@ -1,5 +1,6 @@
 import axios from "axios";
 import { Creator } from "./auth";
+import { emitAuthStateChanged } from "@/lib/auth/events";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
@@ -29,15 +30,59 @@ creatorApiClient.interceptors.request.use(
 creatorApiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const originalRequest = error.config as
+      | (typeof error.config & {
+          _retry?: boolean;
+        })
+      | null;
+
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem("creatorRefreshToken");
+        if (refreshToken) {
+          const response = await axios.post(
+            `${API_BASE_URL}/creators/refresh`,
+            { refreshToken },
+            { withCredentials: true },
+          );
+
+          const { accessToken, refreshToken: newRefreshToken } = response.data;
+          if (accessToken) {
+            localStorage.setItem("creatorAccessToken", accessToken);
+            localStorage.setItem("userType", "creator");
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            }
+          }
+          if (newRefreshToken) {
+            localStorage.setItem("creatorRefreshToken", newRefreshToken);
+          }
+
+          emitAuthStateChanged();
+          return creatorApiClient(originalRequest);
+        }
+      } catch {
+        // Fall through to hard logout below.
+      }
+    }
+
     if (error.response?.status === 401) {
       localStorage.removeItem("creatorAccessToken");
       localStorage.removeItem("creatorRefreshToken");
       localStorage.removeItem("userType");
+      emitAuthStateChanged();
 
       if (typeof window !== "undefined") {
         window.location.href = "/auth/creator/login";
       }
     }
+
     return Promise.reject(error);
   },
 );
@@ -45,8 +90,13 @@ creatorApiClient.interceptors.response.use(
 export interface Video {
   id: string;
   videoId: string;
-  mpdFileUrl: string;
+  title?: string;
+  mpdFileUrl?: string;
   creatorId: string;
+  status?: "PENDING" | "PROCESSING" | "READY" | "FAILED";
+  duration?: number;
+  segmentCount?: number;
+  errorMessage?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -149,6 +199,10 @@ export const creatorService = {
     data: {
       proof: string[];
       totalEarnings: string;
+      totalEarningsFormatted: string;
+      claimable: string;
+      claimableFormatted: string;
+      tokenDecimals: number;
       root: string;
       creatorAddress: string;
     };
