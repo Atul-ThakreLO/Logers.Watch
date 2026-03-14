@@ -317,7 +317,7 @@ Important warning:
 
 ## Contributing
 
-Contribution guidelines are available in [`contributions.md`](contributions.md).
+Contribution guidelines are available in [`contributions.md`](CONTRIBUTIONS.md).
 
 ## License
 
