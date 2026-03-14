@@ -321,5 +321,5 @@ Contribution guidelines are available in [`contributions.md`](contributions.md).
 
 ## License
 
-No license file is currently present in this repository.
-If you want to open-source it, add a `LICENSE` file with your chosen terms.
+This project is licensed under the MIT License.
+See [`LICENSE`](LICENSE) for details.
