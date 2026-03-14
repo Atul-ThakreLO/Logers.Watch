@@ -2,7 +2,8 @@
  * Video Processing Worker
  *
  * Background worker that processes video conversion jobs
- * Run as a separate process: bun run src/workers/video.worker.ts
+ * Can be run standalone: bun run src/workers/video.worker.ts
+ * Or started with the server via startVideoWorker()
  */
 
 import { Worker, type Job, type ConnectionOptions } from "bullmq";
@@ -18,6 +19,8 @@ const connection: ConnectionOptions = {
   host: REDIS_HOST,
   port: REDIS_PORT,
 };
+
+let worker: Worker<VideoJobData> | null = null;
 
 /**
  * Process a video conversion job
@@ -85,51 +88,77 @@ async function processVideo(job: Job<VideoJobData>): Promise<void> {
   }
 }
 
-// Create worker
-const worker = new Worker<VideoJobData>("video-processing", processVideo, {
-  connection,
-  concurrency: parseInt(process.env.VIDEO_WORKER_CONCURRENCY || "2"),
-});
-
-// Worker event handlers
-worker.on("completed", (job) => {
-  console.log(`[Worker] Job ${job.id} completed successfully`);
-});
-
-worker.on("failed", (job, err) => {
-  console.error(`[Worker] Job ${job?.id} failed:`, err.message);
-});
-
-worker.on("error", (err) => {
-  console.error("[Worker] Worker error:", err);
-});
-
-// Startup
-async function start() {
+/**
+ * Start the video processing worker
+ * Can be called from main server or run standalone
+ */
+export async function startVideoWorker(): Promise<Worker<VideoJobData> | null> {
   // Check FFmpeg availability
   const hasFFmpeg = await checkFFmpeg();
   if (!hasFFmpeg) {
-    console.error("[Worker] FFmpeg not found! Please install FFmpeg.");
-    process.exit(1);
+    console.error("[Worker] FFmpeg not found! Video processing disabled.");
+    console.error("[Worker] Install FFmpeg: sudo apt install ffmpeg");
+    return null;
   }
 
-  console.log("[Worker] Video processing worker started");
-  console.log(
-    `[Worker] Concurrency: ${process.env.VIDEO_WORKER_CONCURRENCY || "2"}`,
-  );
-  console.log(`[Worker] Connected to Redis: ${REDIS_HOST}:${REDIS_PORT}`);
+  // Create worker if not already running
+  if (!worker) {
+    worker = new Worker<VideoJobData>("video-processing", processVideo, {
+      connection,
+      concurrency: parseInt(process.env.VIDEO_WORKER_CONCURRENCY || "2"),
+    });
+
+    // Worker event handlers
+    worker.on("completed", (job) => {
+      console.log(`[Worker] Job ${job.id} completed successfully`);
+    });
+
+    worker.on("failed", (job, err) => {
+      console.error(`[Worker] Job ${job?.id} failed:`, err.message);
+    });
+
+    worker.on("error", (err) => {
+      console.error("[Worker] Worker error:", err);
+    });
+
+    console.log("[Worker] Video processing worker started");
+    console.log(
+      `[Worker] Concurrency: ${process.env.VIDEO_WORKER_CONCURRENCY || "2"}`,
+    );
+    console.log(`[Worker] Connected to Redis: ${REDIS_HOST}:${REDIS_PORT}`);
+  }
+
+  return worker;
 }
 
-// Graceful shutdown
-async function shutdown() {
-  console.log("[Worker] Shutting down...");
-  await worker.close();
-  await prisma.$disconnect();
-  process.exit(0);
+/**
+ * Stop the video processing worker
+ */
+export async function stopVideoWorker(): Promise<void> {
+  if (worker) {
+    console.log("[Worker] Shutting down...");
+    await worker.close();
+    worker = null;
+  }
 }
 
-process.on("SIGTERM", shutdown);
-process.on("SIGINT", shutdown);
+// If running as standalone script
+const isStandalone = import.meta.url === `file://${process.argv[1]}`;
+if (isStandalone) {
+  // Graceful shutdown for standalone mode
+  const shutdown = async () => {
+    await stopVideoWorker();
+    await prisma.$disconnect();
+    process.exit(0);
+  };
 
-// Start worker
-start();
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
+
+  // Start worker
+  startVideoWorker().then((w) => {
+    if (!w) {
+      process.exit(1);
+    }
+  });
+}

@@ -19,13 +19,16 @@ model User {
   name               String
   email              String         @unique
   password           String
-  balance            Float          @default(0) // credits balance
+  balance            Float          @default(0) // total deposited balance synced from on-chain
+  totalConsumed      Float          @default(0) // total amount spent watching content
   lastRechargeAmount Float          @default(0)
+  eoaAddress         String?        @unique // wallet address for on-chain deposits
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
   refreshTokens      RefreshToken[]
 
   @@index([email])
+  @@index([eoaAddress])
 }
 
 // Creator model

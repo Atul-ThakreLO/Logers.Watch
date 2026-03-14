@@ -7,8 +7,12 @@ const USER_CACHE_TTL = 300;
 
 // Helper to strip password from user object
 function toUserResponse(user: User): UserResponse {
-  const { password, ...userResponse } = user;
-  return userResponse;
+  const { password, totalConsumed, ...userResponse } = user;
+
+  return {
+    ...userResponse,
+    balance: Math.max(user.balance - totalConsumed, 0),
+  };
 }
 
 export class UserService {

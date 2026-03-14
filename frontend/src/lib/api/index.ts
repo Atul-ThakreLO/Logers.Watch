@@ -25,7 +25,7 @@ export type {
 } from "./creator";
 
 export { billingService } from "./billing";
-export type { BillingStatus, RechargeData, SettlementResult } from "./billing";
+export type { BillingStatus } from "./billing";
 
 export { videoService } from "./video";
 export type { VideoListParams } from "./video";

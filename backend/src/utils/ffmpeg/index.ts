@@ -106,11 +106,13 @@ export async function convertToDash(
 
       // Parse progress from FFmpeg output
       if (duration && onProgress) {
-        const timeMatch = data.toString().match(/time=(\d{2}):(\d{2}):(\d{2})/);
+        const timeMatch = data
+          .toString()
+          .match(/time=\s*(\d+):(\d{2}):(\d{2}(?:\.\d+)?)/);
         if (timeMatch) {
-          const hours = parseInt(timeMatch[1]);
-          const minutes = parseInt(timeMatch[2]);
-          const seconds = parseInt(timeMatch[3]);
+          const hours = parseInt(timeMatch[1], 10);
+          const minutes = parseInt(timeMatch[2], 10);
+          const seconds = parseFloat(timeMatch[3]);
           const currentTime = hours * 3600 + minutes * 60 + seconds;
           const progress = Math.min(
             100,
@@ -143,6 +145,10 @@ export async function convertToDash(
 
       // Count segments
       try {
+        if (onProgress && lastProgress < 100) {
+          onProgress(100);
+        }
+
         const files = await readdir(outputDir);
         const segmentCount = files.filter(
           (f) => f.startsWith("chunk-") && f.endsWith(".m4s"),

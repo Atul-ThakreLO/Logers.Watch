@@ -10,10 +10,10 @@ export const JWT_CONFIG = {
   secret:
     process.env.JWT_SECRET || "your-super-secret-key-change-in-production",
 
-  // Access token expiry in seconds (15 minutes)
-  accessTokenExpiry: 15 * 60,
+  // Access token expiry in seconds (1 week)
+  accessTokenExpiry: 7 * 24 * 60 * 60,
 
-  // Refresh token expiry in seconds (7 days)
+  // Refresh token expiry in seconds (1 week)
   refreshTokenExpiry: 7 * 24 * 60 * 60,
 
   // Stream token default expiry in seconds (1 hour)

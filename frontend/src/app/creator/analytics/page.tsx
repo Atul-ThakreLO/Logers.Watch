@@ -5,12 +5,10 @@ import { creatorService, Video } from "@/lib/api/creator";
 import { Creator } from "@/lib/api/auth";
 import {
   Loader2,
-  TrendingUp,
   Clock,
-  Eye,
   DollarSign,
-  Calendar,
   BarChart3,
+  Video as VideoIcon,
 } from "lucide-react";
 
 export default function CreatorAnalyticsPage() {
@@ -18,9 +16,6 @@ export default function CreatorAnalyticsPage() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d" | "all">(
-    "30d",
-  );
 
   useEffect(() => {
     fetchData();
@@ -52,7 +47,7 @@ export default function CreatorAnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <Loader2 className="h-8 w-8 animate-spin text-secondary" />
       </div>
     );
@@ -72,12 +67,14 @@ export default function CreatorAnalyticsPage() {
     );
   }
 
-  // Mock data for chart visualization
-  const mockDailyData = Array.from({ length: 30 }, (_, i) => ({
-    date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
-    watchTime: Math.random() * 1000 + 100,
-    earnings: Math.random() * 10 + 1,
-  }));
+  const readyVideos = videos.filter((video) => video.status === "READY");
+  const avgDurationSeconds =
+    readyVideos.length > 0
+      ? Math.round(
+          readyVideos.reduce((sum, video) => sum + (video.duration || 0), 0) /
+            readyVideos.length,
+        )
+      : 0;
 
   return (
     <div className="space-y-8">
@@ -85,22 +82,9 @@ export default function CreatorAnalyticsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-white">Analytics</h1>
-          <p className="text-gray-400 mt-1">Track your channel performance</p>
-        </div>
-        <div className="flex gap-2">
-          {(["7d", "30d", "90d", "all"] as const).map((range) => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`px-4 py-2 border-2 transition-all ${
-                timeRange === range
-                  ? "bg-secondary text-gray-900 border-black shadow-[4px_4px_0_0_#000]"
-                  : "bg-gray-800 text-gray-400 border-gray-600 hover:text-white hover:border-secondary"
-              }`}
-            >
-              {range === "all" ? "All Time" : range.toUpperCase()}
-            </button>
-          ))}
+          <p className="text-gray-400 mt-1">
+            Performance based on your live creator data
+          </p>
         </div>
       </div>
 
@@ -118,11 +102,7 @@ export default function CreatorAnalyticsPage() {
               </p>
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
-            <TrendingUp className="w-4 h-4 text-green-400 mr-1" />
-            <span className="text-green-400">+12.5%</span>
-            <span className="text-gray-500 ml-2">vs last period</span>
-          </div>
+          <p className="mt-4 text-sm text-gray-500">All time earnings</p>
         </div>
 
         <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-blue-400 hover:shadow-[4px_4px_0_0_#60a5fa] transition-all">
@@ -137,30 +117,20 @@ export default function CreatorAnalyticsPage() {
               </p>
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
-            <TrendingUp className="w-4 h-4 text-green-400 mr-1" />
-            <span className="text-green-400">+8.3%</span>
-            <span className="text-gray-500 ml-2">vs last period</span>
-          </div>
+          <p className="mt-4 text-sm text-gray-500">All time watch time</p>
         </div>
 
         <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-purple-400 hover:shadow-[4px_4px_0_0_#c084fc] transition-all">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-purple-500/20 border-2 border-purple-400 flex items-center justify-center">
-              <Eye className="w-6 h-6 text-purple-400" />
+              <VideoIcon className="w-6 h-6 text-purple-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-400">Total Views</p>
-              <p className="text-2xl font-bold text-white">
-                {Math.floor((creator?.watchTime || 0) / 120)}
-              </p>
+              <p className="text-sm text-gray-400">Uploaded Videos</p>
+              <p className="text-2xl font-bold text-white">{videos.length}</p>
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
-            <TrendingUp className="w-4 h-4 text-green-400 mr-1" />
-            <span className="text-green-400">+15.2%</span>
-            <span className="text-gray-500 ml-2">vs last period</span>
-          </div>
+          <p className="mt-4 text-sm text-gray-500">Total uploads</p>
         </div>
 
         <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:border-secondary hover:shadow-[4px_4px_0_0_#facc15] transition-all">
@@ -171,89 +141,51 @@ export default function CreatorAnalyticsPage() {
             <div>
               <p className="text-sm text-gray-400">Avg. Watch Duration</p>
               <p className="text-2xl font-bold text-white">
-                {videos.length > 0
-                  ? formatWatchTime(
-                      (creator?.watchTime || 0) /
-                        Math.max(videos.length, 1) /
-                        10,
-                    )
+                {avgDurationSeconds > 0
+                  ? formatWatchTime(avgDurationSeconds)
                   : "0m"}
               </p>
             </div>
           </div>
-          <div className="mt-4 flex items-center text-sm">
-            <TrendingUp className="w-4 h-4 text-green-400 mr-1" />
-            <span className="text-green-400">+5.7%</span>
-            <span className="text-gray-500 ml-2">vs last period</span>
-          </div>
+          <p className="mt-4 text-sm text-gray-500">
+            Average of processed videos
+          </p>
         </div>
       </div>
 
-      {/* Chart Area */}
-      <div className="bg-gray-800 p-6 border-2 border-gray-600 hover:shadow-[4px_4px_0_0_#facc15] transition-shadow">
-        <h3 className="text-lg font-semibold text-white mb-6">
-          Earnings Over Time
-        </h3>
-        <div className="h-64 flex items-end justify-between gap-1">
-          {mockDailyData.slice(-14).map((day, index) => {
-            const maxEarnings = Math.max(
-              ...mockDailyData.map((d) => d.earnings),
-            );
-            const height = (day.earnings / maxEarnings) * 100;
-
-            return (
-              <div
-                key={index}
-                className="flex-1 bg-secondary/20 hover:bg-secondary/40 transition-colors relative group"
-                style={{ height: `${Math.max(height, 5)}%` }}
-              >
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-700 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-gray-600">
-                  ${day.earnings.toFixed(2)}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="flex justify-between mt-4 text-xs text-gray-500">
-          <span>14 days ago</span>
-          <span>Today</span>
-        </div>
-      </div>
-
-      {/* Top Performing Videos */}
+      {/* Video Performance */}
       <div className="bg-gray-800 border-2 border-gray-600">
         <div className="p-6 border-b-2 border-gray-600">
           <h3 className="text-lg font-semibold text-white">
-            Top Performing Videos
+            Video Performance (Real Data)
           </h3>
         </div>
         <div className="divide-y-2 divide-gray-700">
-          {videos.slice(0, 5).map((video, index) => (
+          {videos.slice(0, 8).map((video) => (
             <div
               key={video.id}
               className="p-6 flex items-center gap-4 hover:bg-gray-750 transition-colors"
             >
-              <span className="text-2xl font-bold text-gray-600 w-8">
-                {index + 1}
-              </span>
+              <div className="w-10 h-10 bg-gray-700 border-2 border-gray-600 flex items-center justify-center">
+                <VideoIcon className="w-5 h-5 text-gray-300" />
+              </div>
               <div className="flex-1">
-                <p className="font-medium text-white">{video.videoId}</p>
-                <p className="text-sm text-gray-400 flex items-center gap-4 mt-1">
-                  <span className="flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    {Math.floor(Math.random() * 1000 + 100)} views
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {Math.floor(Math.random() * 60 + 10)}m watched
-                  </span>
+                <p className="font-medium text-white">
+                  {video.title || video.videoId}
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Uploaded: {new Date(video.createdAt).toLocaleDateString()}
                 </p>
               </div>
               <div className="text-right">
-                <p className="font-semibold text-green-400">
-                  ${(Math.random() * 50 + 5).toFixed(2)}
+                <p className="font-semibold text-white capitalize">
+                  {video.status?.toLowerCase() || "unknown"}
                 </p>
-                <p className="text-xs text-gray-500">earnings</p>
+                <p className="text-xs text-gray-500">
+                  {video.duration
+                    ? formatWatchTime(video.duration)
+                    : "Duration N/A"}
+                </p>
               </div>
             </div>
           ))}
@@ -262,6 +194,32 @@ export default function CreatorAnalyticsPage() {
               No videos uploaded yet
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="bg-gray-800 p-6 border-2 border-gray-600">
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Processing Summary
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 border-2 border-gray-700 bg-gray-900">
+            <p className="text-sm text-gray-400">Ready Videos</p>
+            <p className="text-2xl font-bold text-white">
+              {readyVideos.length}
+            </p>
+          </div>
+          <div className="p-4 border-2 border-gray-700 bg-gray-900">
+            <p className="text-sm text-gray-400">Processing</p>
+            <p className="text-2xl font-bold text-white">
+              {videos.filter((video) => video.status === "PROCESSING").length}
+            </p>
+          </div>
+          <div className="p-4 border-2 border-gray-700 bg-gray-900">
+            <p className="text-sm text-gray-400">Failed</p>
+            <p className="text-2xl font-bold text-white">
+              {videos.filter((video) => video.status === "FAILED").length}
+            </p>
+          </div>
         </div>
       </div>
     </div>

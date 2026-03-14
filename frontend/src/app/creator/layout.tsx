@@ -14,6 +14,7 @@ import {
   Upload,
   BarChart3,
 } from "lucide-react";
+import { emitAuthStateChanged } from "@/lib/auth/events";
 
 export default function CreatorLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function CreatorLayout({ children }: { children: ReactNode }) {
     localStorage.removeItem("creatorAccessToken");
     localStorage.removeItem("creatorRefreshToken");
     localStorage.removeItem("userType");
+    emitAuthStateChanged();
     router.push("/auth/creator/login");
   };
 
@@ -64,7 +66,7 @@ export default function CreatorLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-900 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-800 border-r-2 border-gray-700 flex flex-col">
+      <aside className="w-64 h-[calc(100vh-77px)] sticky top-18 left-0 bg-gray-800 border-r-2 border-gray-700 flex flex-col">
         {/* Logo */}
         <div className="p-6 border-b-2 border-gray-700">
           <Link href="/">

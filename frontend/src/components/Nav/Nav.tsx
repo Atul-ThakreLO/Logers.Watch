@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { CustomConnectButton } from "./ConnectButton.custom";
 import { User, Video, LogOut, ChevronDown, Wallet } from "lucide-react";
+import { AUTH_STATE_EVENT, emitAuthStateChanged } from "@/lib/auth/events";
 
 const Nav = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -14,7 +15,11 @@ const Nav = () => {
     checkAuth();
     // Listen for storage changes (login/logout in other tabs)
     window.addEventListener("storage", checkAuth);
-    return () => window.removeEventListener("storage", checkAuth);
+    window.addEventListener(AUTH_STATE_EVENT, checkAuth);
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+      window.removeEventListener(AUTH_STATE_EVENT, checkAuth);
+    };
   }, []);
 
   const checkAuth = () => {
@@ -40,6 +45,7 @@ const Nav = () => {
     setIsAuthenticated(false);
     setUserType(null);
     setShowDropdown(false);
+    emitAuthStateChanged();
     window.location.href = "/";
   };
 
@@ -60,12 +66,12 @@ const Nav = () => {
             <div className="relative">
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex items-center gap-2 px-4 py-1 bg-gray-50 hover:shadow-[4px_4px_0px_0px_black] hover:cursor-pointer border-black border-3 hover:bg-gray-200  transition-colors"
               >
                 {userType === "creator" ? (
-                  <Video className="w-5 h-5 text-secondary" />
+                  <Video className="w-4 h-4 text-secondary" />
                 ) : (
-                  <User className="w-5 h-5 text-primary" />
+                  <User className="w-4 h-4 text-primary" />
                 )}
                 <span className="text-gray-700 font-medium">
                   {userType === "creator" ? "Creator" : "Account"}
@@ -74,12 +80,12 @@ const Nav = () => {
               </button>
 
               {showDropdown && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white shadow-[4px_4px_0px_0px_black] hover:cursor-pointer border-black border-3 overflow-hidden">
                   {userType === "creator" ? (
                     <>
                       <Link
                         href="/creator/dashboard"
-                        className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-secondary/80 transition-colors"
                         onClick={() => setShowDropdown(false)}
                       >
                         <Video className="w-4 h-4" />
@@ -87,7 +93,7 @@ const Nav = () => {
                       </Link>
                       <Link
                         href="/creator/earnings"
-                        className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-secondary/80 transition-colors"
                         onClick={() => setShowDropdown(false)}
                       >
                         <Wallet className="w-4 h-4" />
@@ -98,7 +104,7 @@ const Nav = () => {
                     <>
                       <Link
                         href="/profile"
-                        className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-secondary/80 transition-colors"
                         onClick={() => setShowDropdown(false)}
                       >
                         <User className="w-4 h-4" />
@@ -106,7 +112,7 @@ const Nav = () => {
                       </Link>
                       <Link
                         href="/profile/balance"
-                        className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-secondary/80 transition-colors"
                         onClick={() => setShowDropdown(false)}
                       >
                         <Wallet className="w-4 h-4" />
@@ -117,7 +123,7 @@ const Nav = () => {
                   <hr className="border-gray-100" />
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-secondary/80 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                     Logout

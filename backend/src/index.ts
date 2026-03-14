@@ -8,6 +8,7 @@ import { billingController } from "./modules/billing";
 import { billingWebSocket } from "./modules/billing/websocket";
 import { adminController } from "./modules/admin";
 import { startCronJobs } from "./utils/cron";
+import { startVideoWorker } from "./workers/video.worker";
 import { cors } from "@elysiajs/cors";
 
 const app = new Elysia()
@@ -39,6 +40,7 @@ const app = new Elysia()
   .listen(3000);
 
 startCronJobs();
+startVideoWorker();
 
 console.log(
   `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`,

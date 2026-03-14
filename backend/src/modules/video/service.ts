@@ -197,6 +197,22 @@ export class VideoService {
   }
 
   /**
+   * Get pending/processing videos by creator ID
+   */
+  async getPendingByCreatorId(creatorId: string): Promise<VideoResponse[]> {
+    const videos = await prisma.video.findMany({
+      where: {
+        creatorId,
+        status: {
+          in: ["PENDING", "PROCESSING"],
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return videos;
+  }
+
+  /**
    * Update video
    */
   async update(
@@ -265,7 +281,7 @@ export class VideoService {
   async getAll(
     page: number = 1,
     limit: number = 20,
-  ): Promise<{ videos: VideoResponse[]; total: number }> {
+  ): Promise<{ videos: VideoWithCreator[]; total: number }> {
     const skip = (page - 1) * limit;
 
     const [videos, total] = await Promise.all([
@@ -273,6 +289,16 @@ export class VideoService {
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              company: true,
+            },
+          },
+        },
       }),
       prisma.video.count(),
     ]);

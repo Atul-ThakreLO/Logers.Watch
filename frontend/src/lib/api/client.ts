@@ -3,6 +3,7 @@ import axios, {
   AxiosError,
   InternalAxiosRequestConfig,
 } from "axios";
+import { emitAuthStateChanged } from "@/lib/auth/events";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
@@ -58,6 +59,7 @@ apiClient.interceptors.response.use(
           if (newRefreshToken) {
             localStorage.setItem("refreshToken", newRefreshToken);
           }
+          emitAuthStateChanged();
 
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
@@ -68,6 +70,8 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
+        localStorage.removeItem("userType");
+        emitAuthStateChanged();
 
         if (typeof window !== "undefined") {
           window.location.href = "/auth/login";

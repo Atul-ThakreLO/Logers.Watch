@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { videoService, VideoStatusResult } from "@/lib/api/video";
 import {
@@ -25,38 +25,117 @@ export default function UploadVideoPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [processingStatus, setProcessingStatus] = useState<VideoStatusResult | null>(null);
+  const [processingStatus, setProcessingStatus] =
+    useState<VideoStatusResult | null>(null);
   const [stage, setStage] = useState<UploadStage>("select");
   const [error, setError] = useState("");
   const [videoId, setVideoId] = useState("");
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      const allowedTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo"];
-      if (!allowedTypes.includes(file.type)) {
-        setError("Invalid file type. Allowed: MP4, WebM, MOV, AVI");
-        return;
-      }
+  useEffect(() => {
+    // Check for any pending videos when the component mounts
+    let isMounted = true;
 
-      // Validate file size (2GB max)
-      const maxSize = 2 * 1024 * 1024 * 1024;
-      if (file.size > maxSize) {
-        setError("File too large. Maximum size: 2GB");
-        return;
-      }
+    const checkPendingVideos = async () => {
+      try {
+        const { videos } = await videoService.getPendingVideos();
+        if (videos && videos.length > 0 && isMounted) {
+          // If there's a pending video, resume tracking surface
+          const pendingVideo = videos[0];
 
-      setSelectedFile(file);
-      setError("");
-    }
-  }, []);
+          // If queue says completed but DB hasn't reached READY yet,
+          // don't keep showing a stuck completion state.
+          if (
+            pendingVideo.jobProgress?.state === "completed" &&
+            pendingVideo.video.status !== "READY"
+          ) {
+            setStage("select");
+            return;
+          }
+
+          setVideoId(pendingVideo.video.videoId);
+          setTitle(pendingVideo.video.title || "");
+          setStage("processing");
+
+          if (pendingVideo.jobProgress) {
+            setProcessingStatus(pendingVideo);
+          }
+
+          try {
+            await videoService.pollVideoStatus(
+              pendingVideo.video.videoId,
+              (status) => {
+                if (isMounted) setProcessingStatus(status);
+              },
+              2000,
+              300,
+            );
+
+            if (isMounted) {
+              setStage("complete");
+              setTimeout(() => {
+                if (isMounted) router.push("/creator/videos");
+              }, 3000);
+            }
+          } catch (err: any) {
+            if (isMounted) {
+              setStage("error");
+              setError(
+                err.response?.data?.error || err.message || "Processing failed",
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to check pending videos:", err);
+      }
+    };
+
+    checkPendingVideos();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        // Validate file type
+        const allowedTypes = [
+          "video/mp4",
+          "video/webm",
+          "video/quicktime",
+          "video/x-msvideo",
+        ];
+        if (!allowedTypes.includes(file.type)) {
+          setError("Invalid file type. Allowed: MP4, WebM, MOV, AVI");
+          return;
+        }
+
+        // Validate file size (2GB max)
+        const maxSize = 2 * 1024 * 1024 * 1024;
+        if (file.size > maxSize) {
+          setError("File too large. Maximum size: 2GB");
+          return;
+        }
+
+        setSelectedFile(file);
+        setError("");
+      }
+    },
+    [],
+  );
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file) {
-      const allowedTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo"];
+      const allowedTypes = [
+        "video/mp4",
+        "video/webm",
+        "video/quicktime",
+        "video/x-msvideo",
+      ];
       if (!allowedTypes.includes(file.type)) {
         setError("Invalid file type. Allowed: MP4, WebM, MOV, AVI");
         return;
@@ -108,8 +187,11 @@ export default function UploadVideoPage() {
       const uploadResult = await videoService.uploadVideo(
         selectedFile,
         title || undefined,
-        (progress) => setUploadProgress(progress)
+        (progress) => setUploadProgress(progress),
       );
+
+      // Ensure UI does not stay below 100% when upload request completes.
+      setUploadProgress(100);
 
       setVideoId(uploadResult.video.videoId);
       setStage("processing");
@@ -119,7 +201,7 @@ export default function UploadVideoPage() {
         uploadResult.video.videoId,
         (status) => setProcessingStatus(status),
         2000,
-        300
+        300,
       );
 
       setStage("complete");
@@ -139,7 +221,9 @@ export default function UploadVideoPage() {
         return (
           <div className="text-center py-12">
             <Loader2 className="w-16 h-16 text-secondary animate-spin mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-white mb-2">Uploading Video</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Uploading Video
+            </h2>
             <p className="text-gray-400 mb-6">Please don't close this page</p>
             <div className="max-w-md mx-auto">
               <div className="flex justify-between text-sm text-gray-400 mb-2">
@@ -157,12 +241,43 @@ export default function UploadVideoPage() {
         );
 
       case "processing":
-        const progress = processingStatus?.jobProgress?.progress || 0;
-        const state = processingStatus?.jobProgress?.state || "waiting";
+        const isReady = processingStatus?.video.status === "READY";
+        const isFailed = processingStatus?.video.status === "FAILED";
+        const state = isReady
+          ? "completed"
+          : (processingStatus?.jobProgress?.state ?? "waiting");
+        const rawProgress = processingStatus?.jobProgress?.progress ?? 0;
+        const progress = isReady
+          ? 100
+          : state === "waiting" || state === "delayed"
+            ? Math.max(rawProgress, 5)
+            : state === "active"
+              ? Math.max(rawProgress, 10)
+              : Math.min(rawProgress, 99);
+
+        if (isFailed) {
+          return (
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-red-500/20 border-2 border-red-400 flex items-center justify-center mx-auto mb-6">
+                <XCircle className="w-10 h-10 text-red-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Processing Failed
+              </h2>
+              <p className="text-red-400 mb-6">
+                {processingStatus?.video.errorMessage ||
+                  "Video processing failed"}
+              </p>
+            </div>
+          );
+        }
+
         return (
           <div className="text-center py-12">
             <Clock className="w-16 h-16 text-blue-400 animate-pulse mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-white mb-2">Processing Video</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Processing Video
+            </h2>
             <p className="text-gray-400 mb-6">Converting to DASH format...</p>
             <div className="max-w-md mx-auto">
               <div className="flex justify-between text-sm text-gray-400 mb-2">
@@ -175,9 +290,7 @@ export default function UploadVideoPage() {
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-sm text-gray-500 mt-4">
-                Video ID: {videoId}
-              </p>
+              <p className="text-sm text-gray-500 mt-4">Video ID: {videoId}</p>
             </div>
           </div>
         );
@@ -188,11 +301,15 @@ export default function UploadVideoPage() {
             <div className="w-20 h-20 bg-green-500/20 border-2 border-green-400 flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-10 h-10 text-green-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Upload Complete!</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Upload Complete!
+            </h2>
             <p className="text-gray-400 mb-4">
               Your video has been processed and is ready to stream.
             </p>
-            <p className="text-sm text-gray-500">Redirecting to videos page...</p>
+            <p className="text-sm text-gray-500">
+              Redirecting to videos page...
+            </p>
           </div>
         );
 
@@ -202,7 +319,9 @@ export default function UploadVideoPage() {
             <div className="w-20 h-20 bg-red-500/20 border-2 border-red-400 flex items-center justify-center mx-auto mb-6">
               <XCircle className="w-10 h-10 text-red-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Upload Failed</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Upload Failed
+            </h2>
             <p className="text-red-400 mb-6">{error}</p>
             <button
               onClick={() => {
@@ -263,7 +382,9 @@ export default function UploadVideoPage() {
                   <div className="w-16 h-16 bg-green-500/20 border-2 border-green-400 flex items-center justify-center mb-4">
                     <VideoIcon className="w-8 h-8 text-green-400" />
                   </div>
-                  <p className="text-white font-medium mb-1">{selectedFile.name}</p>
+                  <p className="text-white font-medium mb-1">
+                    {selectedFile.name}
+                  </p>
                   <p className="text-gray-400 text-sm mb-4">
                     {formatFileSize(selectedFile.size)}
                   </p>
@@ -345,7 +466,9 @@ export default function UploadVideoPage() {
               <div className="w-6 h-6 bg-secondary text-gray-900 font-bold flex items-center justify-center shrink-0">
                 2
               </div>
-              <p>Our server converts it to DASH format for adaptive streaming</p>
+              <p>
+                Our server converts it to DASH format for adaptive streaming
+              </p>
             </div>
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 bg-secondary text-gray-900 font-bold flex items-center justify-center shrink-0">
@@ -361,8 +484,9 @@ export default function UploadVideoPage() {
       {(stage === "uploading" || stage === "processing") && (
         <div className="bg-blue-500/10 border-2 border-blue-500 p-4 text-sm text-blue-300">
           <p>
-            <strong>Note:</strong> Processing time depends on video length and resolution.
-            A 10-minute video typically takes 2-5 minutes to process.
+            <strong>Note:</strong> Processing time depends on video length and
+            resolution. A 10-minute video typically takes 2-5 minutes to
+            process.
           </p>
         </div>
       )}

@@ -35,6 +35,7 @@ export interface User {
   email: string;
   password: string;
   balance: number;
+  totalConsumed: number;
   lastRechargeAmount: number;
   createdAt: Date;
   updatedAt: Date;
@@ -58,6 +59,10 @@ export interface UserResponse {
 
 // Helper to strip password from user object
 export function toUserResponse(user: User): UserResponse {
-  const { password, ...userResponse } = user;
-  return userResponse;
+  const { password, totalConsumed, ...userResponse } = user;
+
+  return {
+    ...userResponse,
+    balance: Math.max(user.balance - totalConsumed, 0),
+  };
 }
