@@ -19,10 +19,12 @@ import {
     ReentrancyGuard
 } from "@openzeppelin-contracts/utils/ReentrancyGuard.sol";
 
-
 pragma solidity ^0.8.24;
 
 contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
+    ////////////////////////////////////////////////////////////
+    ////////////////////////// Errors //////////////////////////
+    ////////////////////////////////////////////////////////////
     error LogersWatch__TokenNotSupported();
     error LogersWatch__AmountMustMoreThanZero();
     error LogersWatch__PermitFailed();
@@ -30,6 +32,9 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
     error LogersWatch__UnAuthorizedAccount();
     error LogersWatch__MerkleRootNotSet();
 
+    ////////////////////////////////////////////////////////////
+    /////////////// State Variables and Mappings ///////////////
+    ////////////////////////////////////////////////////////////
     mapping(address creator => bool status) isVerifiedCreator;
     mapping(address creator => uint256 withdrawn) creatorWithdrawn;
     mapping(address tokenAddress => bool status) isSupportedTokens;
@@ -46,6 +51,9 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
     bytes32 private CREATOR_CLAIM_ROLE =
         keccak256("LOGERS_WATCH_CREATOR_ROLE_ACCESS_CHECK");
 
+    ////////////////////////////////////////////////////////////
+    ////////////////////////// Events //////////////////////////
+    ////////////////////////////////////////////////////////////
     event Deposited(address indexed user, uint256 indexed amount);
     event Claimed(address indexed creator, uint256 indexed amount);
     event RootChange();
@@ -57,12 +65,22 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
     event RevokeClaimRole(address indexed creator);
     event ChangePlatformFee(uint256 newFee);
 
+    ////////////////////////////////////////////////////////////
+    /////////////////////// Constructor ////////////////////////
+    ////////////////////////////////////////////////////////////
+    /**
+     * @param supportedTokens Array of token addresses that are supported from deployment.
+     * @notice Initializes supported token mapping at contract creation.
+     */
     constructor(address[] memory supportedTokens) Ownable(msg.sender) {
         for (uint8 i = 0; i < supportedTokens.length; i++) {
             isSupportedTokens[supportedTokens[i]] = true;
         }
     }
 
+    ////////////////////////////////////////////////////////////
+    //////////////////////// Modifiers /////////////////////////
+    ////////////////////////////////////////////////////////////
     modifier amountNotZero(uint256 value) {
         if (value <= 0) revert LogersWatch__AmountMustMoreThanZero();
         _;
@@ -75,6 +93,21 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
         _;
     }
 
+    ////////////////////////////////////////////////////////////
+    //////////////////////// Functions /////////////////////////
+    ////////////////////////////////////////////////////////////
+    /**
+     *
+     * @param token Token address, that will be deposit
+     * @param value Amount of token to be deposit.
+     * @param deadline Expiration time for permit
+     * @param v signature component
+     * @param r signature component
+     * @param s signature component
+     * @dev Put Permit logic inside try catch try block to handle signature failures gracefully
+     * without reverting the entire transaction. This allows the contract to proceed with a
+     * fallback mechanism (like using transferFrom if allowance already exists)
+     */
     function deposit(
         address token,
         uint256 value,
@@ -101,6 +134,12 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
         emit Deposited(msg.sender, value);
     }
 
+    /**
+     *
+     * @param token Token address, that will be deposit.
+     * @param value Amount of token to be deposit.
+     * @notice The allowance of token is needed to the contract.
+     */
     function depositWithoutPermit(
         address token,
         uint256 value
@@ -110,6 +149,21 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
         emit Deposited(msg.sender, value);
     }
 
+    /**
+     *
+     * @param proof Merkle Proof array to claim earnings.
+     * @param totalEarnings The exact amount of earnings, that is set while creating merkle tree.
+     * @param token Address of a token, need to claim.
+     * @notice This function transfer the pending earning to creator account, and deducts platform fee
+     * The Pending earning is calculated by subtracting past claimed amount and newly released total earning.
+     * For example:
+     * totalEarning = $20
+     * and creatorWithdrawn[creatorAddress] = $10
+     * claimable amount will be $10 ($20 - $10)
+     * PLTFORM_FEE = 1e17 i.e 10%
+     * 10% of claimable amount -> 10% of $10 = $1
+     * final amount to claim $10 - $1 = $9
+     */
     function claim(
         bytes32[] memory proof,
         uint256 totalEarnings,
@@ -137,16 +191,29 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
         emit Claimed(msg.sender, amountToWithdraw - platformFee);
     }
 
+    /**
+     * @param creator Creator address, to grant a claim role
+     * @notice This function grant access to creator form claiming earnings and verifying the creator.
+     */
     function grantClaimRoleToCreator(address creator) public onlyOwner {
         _grantRole(CREATOR_CLAIM_ROLE, creator);
         emit GrantClaimRole(creator);
     }
 
+    /**
+     *
+     * @param creator Creator address, to revoke a claim role
+     * @notice This function revoke claim role
+     */
     function revokeCreatorClaimRole(address creator) public onlyOwner {
         _revokeRole(CREATOR_CLAIM_ROLE, creator);
         emit RevokeClaimRole(creator);
     }
 
+    /**
+     * @param creator Creator address to verify and allow claiming.
+     * @notice Adds creator to verified list and grants claim role.
+     */
     function addCreator(address creator) public onlyOwner {
         creatorsList.push(creator);
         isVerifiedCreator[creator] = true;
@@ -154,71 +221,127 @@ contract LogersWatch is Ownable, AccessControl, ReentrancyGuard {
         emit AddCreator(creator);
     }
 
+    /**
+     * @param newToken Token address to mark as supported.
+     * @notice Adds a new ERC20 token that can be used for deposits and claims.
+     */
     function addNewTokenSupport(address newToken) public onlyOwner {
         supportedTokensList.push(newToken);
         isSupportedTokens[newToken] = true;
         emit AddNewTokenSupport(newToken);
     }
 
+    /**
+     * @param creator Creator address to ban.
+     * @notice Removes creator verification and revokes claim role.
+     */
     function banCreator(address creator) public onlyOwner {
         isVerifiedCreator[creator] = false;
         revokeCreatorClaimRole(creator);
         emit BanCreator(creator);
     }
 
+    /**
+     * @param newToken Token address to disable.
+     * @notice Removes token support for future deposits and claims.
+     */
     function banTokenSupport(address newToken) public onlyOwner {
         isSupportedTokens[newToken] = false;
         emit RemoveTokenSupport(newToken);
     }
 
+    /**
+     * @param amountToWithdraw Gross amount creator can withdraw.
+     * @return Platform fee amount based on current PLATFORM_FEE rate.
+     * @notice Calculates platform fee using 1e18 precision factor.
+     */
     function calculateFlatformFee(
         uint256 amountToWithdraw
     ) private view returns (uint256) {
         return (amountToWithdraw * PLATFORM_FEE) / PRECISION_FACTOR;
     }
 
+    /**
+     * @param root New Merkle root used for claim verification.
+     * @notice Updates Merkle root for creator earnings distribution.
+     */
     function setMerkleRoot(bytes32 root) public onlyOwner {
         MERKLE_ROOT = root;
         emit RootChange();
     }
 
+    /**
+     * @param newFee New platform fee in 1e18 precision format.
+     * @notice Updates global platform fee rate.
+     */
     function changePlatformFee(uint256 newFee) public onlyOwner {
         PLATFORM_FEE = newFee;
         emit ChangePlatformFee(newFee);
     }
 
+    ////////////////////////////////////////////////////////////
+    ///////////////////// Getter Functions /////////////////////
+    ////////////////////////////////////////////////////////////
+    /**
+     * @return Current platform fee in 1e18 precision format.
+     */
     function getPlatformFee() public view returns (uint256) {
         return PLATFORM_FEE;
     }
 
+    /**
+     * @return Array of all creators added through addCreator.
+     */
     function getCreators() public view returns (address[] memory) {
         return creatorsList;
     }
 
+    /**
+     * @return Array of token addresses that were added as supported tokens.
+     */
     function getSupportedTokens() public view returns (address[] memory) {
         return supportedTokensList;
     }
 
+    /**
+     * @param token Token address to check support status.
+     * @return True if token is currently supported.
+     */
     function getTokenStatus(address token) public view returns (bool) {
         return isSupportedTokens[token];
     }
 
+    /**
+     * @return True if msg.sender is a verified creator.
+     */
     function getCreatorStstus() public view returns (bool) {
         return isVerifiedCreator[msg.sender];
     }
 
+    /**
+     * @param creator Creator address to query.
+     * @return Total amount already withdrawn by creator.
+     */
     function getTotalWithdrawnByCreator(
         address creator
     ) public view returns (uint256) {
         return creatorWithdrawn[creator];
     }
 
+    /**
+     * @param creator Creator address to query.
+     * @return Total platform fees paid by creator across claims.
+     */
     function getTotalPlatformFeesPaidByCreator(
         address creator
     ) public view returns (uint256) {
         return totalPlatformFeePaidByCreator[creator];
     }
 
+    /**
+     * @param user User address to query deposited balance.
+     * @return Total deposited amount tracked for the user.
+     */
     function getTotaldepositedByUser(
         address user
     ) public view returns (uint256) {

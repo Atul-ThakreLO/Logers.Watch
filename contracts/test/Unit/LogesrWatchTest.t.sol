@@ -11,6 +11,9 @@ import {IERC20} from "@openzeppelin-contracts/interfaces/IERC20.sol";
 import {TestTokenMock} from "../Mocks/TestTokenMock.sol";
 
 contract LogersWatchTest is Test {
+    ////////////////////////////////////////////////////////////
+    ////////////////// Global Ghost Varibales //////////////////
+    ////////////////////////////////////////////////////////////
     LogersWatch lw;
     address token1;
     address token2;
@@ -22,6 +25,9 @@ contract LogersWatchTest is Test {
     uint256 constant INITIAL_BALANCE_OF_USER = 200e18;
     uint256 constant DEPOSIT_AMOUNT = INITIAL_BALANCE_OF_USER / 2;
 
+    ////////////////////////////////////////////////////////////
+    ///////////////////// Merkle tree data /////////////////////
+    ////////////////////////////////////////////////////////////
     bytes32 ROOT =
         0x9d5752ade6ceebdf350d992cceeda1dbe9fd54b0926decc4bae5723cdcfc5f23;
     bytes32 PROOF1 =
@@ -30,9 +36,11 @@ contract LogersWatchTest is Test {
         0x205ca9639b73a8c7fcbcfd6fcb9b80601b8850858c3fb9f04f380babeadf2128;
     address creator = 0x6CA6d1e2D5347Bfab1d91e883F1915560e09129D;
     uint256 TOTAL_EARNINGS = 25200;
-
     bytes32[] PROOF = [PROOF1, PROOF2];
 
+    ////////////////////////////////////////////////////////////
+    ////////////////////////// Set Up //////////////////////////
+    ////////////////////////////////////////////////////////////
     function setUp() public {
         (user, userPrivateKey) = makeAddrAndKey("USER");
         owner = makeAddr("OWNER");
@@ -47,6 +55,9 @@ contract LogersWatchTest is Test {
         ERC20Mock(token2).mint(user, INITIAL_BALANCE_OF_USER);
     }
 
+    ////////////////////////////////////////////////////////////
+    ////////////////////// Deposit Tests ///////////////////////
+    ////////////////////////////////////////////////////////////
     function testCanDepositeWithoutPermit() public {
         vm.startPrank(user);
         IERC20(token1).approve(address(lw), DEPOSIT_AMOUNT);
@@ -87,6 +98,9 @@ contract LogersWatchTest is Test {
         assertEq(INITIAL_BALANCE_OF_USER - DEPOSIT_AMOUNT, userBalance);
     }
 
+    ////////////////////////////////////////////////////////////
+    /////////////////////// Claim Tests ////////////////////////
+    ////////////////////////////////////////////////////////////
     function testClaim() public {
         // Deposit
         uint256 value = DEPOSIT_AMOUNT;
@@ -121,6 +135,15 @@ contract LogersWatchTest is Test {
         assertEq(balanceAfterClaim, DEPOSIT_AMOUNT - expectedCreatorBalance);
     }
 
+    /**
+     * 
+     * @param _owner Creator address
+     * @param _spender Smart Contract address (LogersWatch)
+     * @param _value Amount to be Permit
+     * @param _nonce Nonce to prevent rentrancy attack
+     * @param _deadline Expiration of permit
+     * @notice This function builds the digest for creating signature components(v, r, s)
+     */
     function _buildPermitDigest(
         address _owner,
         address _spender,
